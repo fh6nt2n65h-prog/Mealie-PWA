@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import type { Recipe, RecipeSummary } from '@/types/mealie'
 import { formatDuration, getRecipeImageUrl } from '@/lib/utils'
 
@@ -5,15 +6,64 @@ type RecipeListRowProps = {
   recipe: Recipe | RecipeSummary
   baseUrl: string
   onClick: () => void
+  onLongPress?: () => void
 }
 
-export function RecipeListRow({ recipe, baseUrl, onClick }: RecipeListRowProps) {
+export function RecipeListRow({ recipe, baseUrl, onClick, onLongPress }: RecipeListRowProps) {
   const image = getRecipeImageUrl(baseUrl, recipe, 'small')
+  const longPressTimerRef = useRef<number | null>(null)
+  const suppressClickRef = useRef(false)
+
+  function clearLongPressTimer() {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  function startLongPress() {
+    if (!onLongPress) {
+      return
+    }
+
+    clearLongPressTimer()
+    longPressTimerRef.current = window.setTimeout(() => {
+      suppressClickRef.current = true
+      onLongPress()
+    }, 480)
+  }
+
+  function handleClick() {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      return
+    }
+
+    onClick()
+  }
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
+      onContextMenu={(event) => {
+        if (!onLongPress) {
+          return
+        }
+
+        event.preventDefault()
+        onLongPress()
+      }}
+      onMouseDown={(event) => {
+        if (event.button === 0) {
+          startLongPress()
+        }
+      }}
+      onMouseUp={clearLongPressTimer}
+      onMouseLeave={clearLongPressTimer}
+      onTouchStart={startLongPress}
+      onTouchEnd={clearLongPressTimer}
+      onTouchCancel={clearLongPressTimer}
       className="grid w-full grid-cols-[88px_1fr] gap-4 rounded-[1.4rem] border border-taupe/70 bg-parchment p-3 text-left shadow-paper transition-transform duration-200 hover:-translate-y-0.5"
     >
       {image ? (

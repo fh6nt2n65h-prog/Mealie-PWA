@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { useRef } from 'react'
 import type { Recipe, RecipeSummary } from '@/types/mealie'
 import { formatDuration, getRecipeImageUrl } from '@/lib/utils'
 
@@ -6,16 +7,65 @@ type RecipeCardProps = {
   recipe: Recipe | RecipeSummary
   baseUrl: string
   onClick: () => void
+  onLongPress?: () => void
   compact?: boolean
 }
 
-export function RecipeCard({ recipe, baseUrl, onClick, compact = false }: RecipeCardProps) {
+export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, compact = false }: RecipeCardProps) {
   const image = getRecipeImageUrl(baseUrl, recipe, 'small')
+  const longPressTimerRef = useRef<number | null>(null)
+  const suppressClickRef = useRef(false)
+
+  function clearLongPressTimer() {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
+
+  function startLongPress() {
+    if (!onLongPress) {
+      return
+    }
+
+    clearLongPressTimer()
+    longPressTimerRef.current = window.setTimeout(() => {
+      suppressClickRef.current = true
+      onLongPress()
+    }, 480)
+  }
+
+  function handleClick() {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      return
+    }
+
+    onClick()
+  }
 
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
+      onContextMenu={(event) => {
+        if (!onLongPress) {
+          return
+        }
+
+        event.preventDefault()
+        onLongPress()
+      }}
+      onMouseDown={(event) => {
+        if (event.button === 0) {
+          startLongPress()
+        }
+      }}
+      onMouseUp={clearLongPressTimer}
+      onMouseLeave={clearLongPressTimer}
+      onTouchStart={startLongPress}
+      onTouchEnd={clearLongPressTimer}
+      onTouchCancel={clearLongPressTimer}
       className={clsx(
         'h-full overflow-hidden rounded-card border border-taupe/75 bg-parchment text-left shadow-paper transition-transform duration-200 hover:-translate-y-1',
         compact ? 'grid grid-cols-[1fr_auto] gap-5 p-4' : 'flex flex-col'

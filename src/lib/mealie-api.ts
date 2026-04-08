@@ -44,7 +44,7 @@ export class MealieApi {
     const headers = new Headers(init?.headers)
     headers.set('Accept', 'application/json')
 
-    if (init?.body && !headers.has('Content-Type')) {
+    if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json')
     }
 
@@ -121,6 +121,30 @@ export class MealieApi {
     return this.request<string>('/recipes', {
       method: 'POST',
       body: JSON.stringify(payload)
+    })
+  }
+
+  async createRecipeFromUrl(url: string) {
+    return this.request<string>('/recipes/create/url', {
+      method: 'POST',
+      body: JSON.stringify({
+        url,
+        includeTags: false,
+        includeCategories: false
+      })
+    })
+  }
+
+  async createRecipeFromImages(images: File[]) {
+    const formData = new FormData()
+
+    images.forEach((image) => {
+      formData.append('images', image)
+    })
+
+    return this.request<string>('/recipes/create/image', {
+      method: 'POST',
+      body: formData
     })
   }
 

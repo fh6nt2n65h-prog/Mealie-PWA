@@ -1,5 +1,4 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
 import type { Recipe } from '@/types/mealie'
 import { RecipeCard } from '@/components/recipe-card'
 
@@ -9,9 +8,10 @@ type SwipeRecipeDeckProps = {
   onChangeIndex: (index: number) => void
   baseUrl: string
   onSelect: (slug: string) => void
+  onLongPress?: (recipe: Recipe) => void
 }
 
-export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl, onSelect }: SwipeRecipeDeckProps) {
+export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl, onSelect, onLongPress }: SwipeRecipeDeckProps) {
   const recipe = recipes[currentIndex]
 
   if (!recipe) {
@@ -55,30 +55,9 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
             exit={{ opacity: 0, y: -18, scale: 0.98 }}
             transition={{ duration: 0.24, ease: 'easeOut' }}
           >
-            <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} />
+            <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} onLongPress={onLongPress ? () => onLongPress(recipe) : undefined} />
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      <div className="flex items-center justify-between rounded-full border border-taupe/70 bg-parchment px-4 py-3 shadow-paper">
-        <button
-          type="button"
-          onClick={() => goTo(currentIndex - 1)}
-          className="inline-flex items-center gap-2 rounded-full bg-oat px-4 py-2 text-sm font-semibold text-ink disabled:opacity-40"
-          disabled={currentIndex === 0}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Previous
-        </button>
-        <button
-          type="button"
-          onClick={() => goTo(currentIndex + 1)}
-          className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-parchment disabled:opacity-40"
-          disabled={currentIndex === recipes.length - 1}
-        >
-          Next
-          <ArrowRight className="h-4 w-4" />
-        </button>
       </div>
     </div>
   )

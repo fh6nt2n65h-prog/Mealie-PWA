@@ -74,8 +74,10 @@ export function MealPlanPage() {
   const [recipeOptions, setRecipeOptions] = useState<RecipeSummary[]>([])
   const [recipeSearch, setRecipeSearch] = useState('')
   const [loadingRecipeOptions, setLoadingRecipeOptions] = useState(false)
+  const [pullDistance, setPullDistance] = useState(0)
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const daySectionsRef = useRef<Record<string, HTMLElement | null>>({})
+  const touchStartRef = useRef<number | null>(null)
   const calendarDays = CALENDAR_DAYS
 
   async function loadMealPlan(options?: { background?: boolean }) {
@@ -181,6 +183,51 @@ export function MealPlanPage() {
     container.scrollTo({ top: target.offsetTop - 12, behavior: 'smooth' })
   }
 
+  function getScrollRoot() {
+    if (typeof document === 'undefined') {
+      return null
+    }
+
+    return document.getElementById('app-scroll-root')
+  }
+
+  function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    const scrollRoot = getScrollRoot()
+
+    if (scrollRoot && scrollRoot.scrollTop <= 0 && !refreshing) {
+      touchStartRef.current = event.touches[0]?.clientY || null
+    }
+  }
+
+  function handleTouchMove(event: React.TouchEvent<HTMLDivElement>) {
+    if (touchStartRef.current === null) {
+      return
+    }
+
+    const scrollRoot = getScrollRoot()
+
+    if (scrollRoot && scrollRoot.scrollTop > 0) {
+      setPullDistance(0)
+      return
+    }
+
+    const delta = (event.touches[0]?.clientY || 0) - touchStartRef.current
+
+    if (delta > 0) {
+      setPullDistance(Math.min(delta * 0.45, 96))
+    }
+  }
+
+  function handleTouchEnd() {
+    const shouldRefresh = pullDistance >= 56
+    touchStartRef.current = null
+    setPullDistance(0)
+
+    if (shouldRefresh) {
+      void loadMealPlan({ background: true })
+    }
+  }
+
   function openCreateDialog(dayKey: string, entryType: PlanEntryType) {
     setDraft(createDraft(dayKey, entryType))
     setRecipeSearch('')
@@ -283,10 +330,18 @@ export function MealPlanPage() {
 
   return (
     <>
-      <div className="space-y-5 animate-rise">
+      <div className="space-y-5 animate-rise" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+        <div className="sticky top-0 z-10 flex h-0 justify-center overflow-visible pointer-events-none" aria-hidden="true">
+          <div
+            className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper transition-transform duration-200"
+            style={{ transform: `translateY(${refreshing || pullDistance ? 10 : -70}px)` }}
+          >
+            {refreshing ? 'Refreshing' : 'Pull to refresh'}
+          </div>
+        </div>
+
         <section className="rounded-card border border-taupe/70 bg-parchment px-4 py-4 shadow-paper sm:px-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="flex gap-2 overflow-x-auto pb-1">
               {calendarDays.map((day) => {
                 const hasEntries = (entriesByDate.get(day.key) || []).length > 0
                 const isSelected = day.key === selectedDayKey
@@ -296,21 +351,12 @@ export function MealPlanPage() {
                     key={day.key}
                     type="button"
                     onClick={() => jumpToDay(day.key)}
-                    className={`shrink-0 rounded-full border px-4 py-3 text-sm font-semibold transition-colors ${isSelected ? 'border-ink bg-ink text-parchment' : hasEntries ? 'border-sage/60 bg-sage/15 text-olive' : 'border-taupe bg-cream text-oliveGray'}`}
+                    className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition-colors sm:px-4 sm:py-3 sm:text-sm ${isSelected ? 'border-ink bg-ink text-parchment' : hasEntries ? 'border-sage/60 bg-sage/15 text-olive' : 'border-taupe bg-cream text-oliveGray'}`}
                   >
                     {day.label}
                   </button>
                 )
               })}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => void loadMealPlan({ background: true })}
-              className="inline-flex items-center justify-center rounded-full border border-taupe bg-cream px-4 py-3 text-sm font-semibold text-ink"
-            >
-              {refreshing ? 'Refreshing…' : 'Refresh'}
-            </button>
           </div>
         </section>
 
@@ -439,7 +485,7 @@ export function MealPlanPage() {
         }
       >
         <div className="space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <label className="block space-y-2">
               <span className="text-sm font-semibold text-ink">Date</span>
               <input
