@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-# Mealie-PWA
-=======
 # Private Culinary Journal
 
 Private Culinary Journal is a React + TypeScript + Vite Progressive Web App that acts as a custom frontend for a self-hosted Mealie instance. The interface is tuned for iOS standalone install behavior, a warm editorial visual language, and fast access to recipes, meal plans, shopping lists, and device-local settings.
@@ -322,4 +319,3 @@ After Certbot finishes:
 - Replace the placeholder icons in `public/icons/` with final PNG or SVG assets.
 - If you want richer recipe detail interactions, the Mealie favorites and ratings endpoints are available in the API.
 - If you expose the app publicly, keep the Mealie server protected and use long-lived tokens sparingly.
->>>>>>> aac7dd2 (Initial import: Mealie PWA client)
