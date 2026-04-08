@@ -3,9 +3,9 @@ export type ApiSettings = {
   apiToken: string
 }
 
-export type ViewMode = 'list' | 'grid' | 'swipe'
+export type ViewMode = 'grid' | 'swipe'
 
-export type MealPlanDensity = 'advanced' | 'compact'
+export type MealPlanDensity = 'compact'
 
 export type Pagination<T> = {
   items: T[]

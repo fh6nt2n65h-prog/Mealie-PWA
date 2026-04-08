@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import dayjs from 'dayjs'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
@@ -7,14 +8,27 @@ import { useSettings } from '@/app/settings-context'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
 import { RecipeCard } from '@/components/recipe-card'
-import { RecipeListRow } from '@/components/recipe-list-row'
 import { SearchField } from '@/components/search-field'
 import { SwipeRecipeDeck } from '@/components/swipe-recipe-deck'
 import { useStoredState } from '@/hooks/use-stored-state'
 import { getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { loadViewMode, saveViewMode } from '@/lib/storage'
-import { clamp, matchesRecipeQuery } from '@/lib/utils'
+import { clamp, formatDayLabel, matchesRecipeQuery } from '@/lib/utils'
+
+function buildCalendarDays() {
+  return Array.from({ length: 14 }, (_, index) => {
+    const date = dayjs().add(index, 'day')
+
+    return {
+      key: date.format('YYYY-MM-DD'),
+      label: formatDayLabel(date.format('YYYY-MM-DD'))
+    }
+  })
+}
+
+const MEAL_PLAN_DAYS = buildCalendarDays()
+const QUICK_MEAL_TYPES: PlanEntryType[] = ['breakfast', 'lunch', 'dinner']
 
 async function hydrateRecipes(api: MealieApi, summaries: RecipeSummary[]) {
   const hydrated: Recipe[] = []
@@ -49,7 +63,7 @@ export function RecipesPage() {
   const [error, setError] = useState('')
   const [searchValue, setSearchValue] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [viewMode] = useStoredState<ViewMode>(loadViewMode, saveViewMode)
+  const [storedViewMode] = useStoredState<ViewMode>(loadViewMode, saveViewMode)
   const [swipeIndex, setSwipeIndex] = useState(0)
   const [pullDistance, setPullDistance] = useState(0)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -175,6 +189,8 @@ export function RecipesPage() {
 
   const filteredRecipes = recipes.filter((recipe) => matchesRecipeQuery(recipe, searchValue))
   const currentSwipeIndex = clamp(swipeIndex, 0, Math.max(filteredRecipes.length - 1, 0))
+  const viewMode = storedViewMode === 'grid' ? 'grid' : 'swipe'
+  const mealPlanDays = useMemo(() => MEAL_PLAN_DAYS, [])
 
   function getScrollRoot() {
     if (typeof document === 'undefined') {
@@ -445,14 +461,6 @@ export function RecipesPage() {
           </section>
         )}
 
-        {!error && filteredRecipes.length > 0 && viewMode === 'list' && (
-          <section className="space-y-3">
-            {filteredRecipes.map((recipe) => (
-              <RecipeListRow key={recipe.slug} recipe={recipe} baseUrl={settings.baseUrl} onClick={() => navigate(`/recipes/${recipe.slug}`)} onLongPress={() => openRecipeActions(recipe)} />
-            ))}
-          </section>
-        )}
-
         {!error && filteredRecipes.length > 0 && viewMode === 'swipe' && (
           <SwipeRecipeDeck
             recipes={filteredRecipes}
@@ -580,22 +588,11 @@ export function RecipesPage() {
       <DialogSheet
         open={Boolean(selectedRecipe)}
         title={selectedRecipe?.name || 'Recipe actions'}
-        description="Long-press actions for this recipe."
         onClose={closeRecipeActions}
         footer={
           recipeActionMode === 'mealplan'
             ? (
                 <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRecipeActionMode('menu')
-                      setActionError('')
-                    }}
-                    className="inline-flex items-center justify-center rounded-full border border-taupe bg-parchment px-5 py-3 text-sm font-semibold text-ink"
-                  >
-                    Back
-                  </button>
                   <button
                     type="button"
                     onClick={() => void handleAddRecipeToMealPlan()}
@@ -641,27 +638,44 @@ export function RecipesPage() {
 
         {recipeActionMode === 'mealplan' && (
           <div className="space-y-4">
-            <label className="block space-y-2">
+            <div className="space-y-2">
               <span className="text-sm font-semibold text-ink">Date</span>
-              <input
-                type="date"
-                value={mealPlanDate}
-                onChange={(event) => setMealPlanDate(event.target.value)}
-                className="w-full rounded-[1.25rem] border border-taupe bg-cream px-4 py-3 text-sm text-ink outline-none"
-              />
-            </label>
-            <label className="block space-y-2">
-              <span className="text-sm font-semibold text-ink">Meal type</span>
-              <select
-                value={mealPlanType}
-                onChange={(event) => setMealPlanType(event.target.value as PlanEntryType)}
-                className="w-full rounded-[1.25rem] border border-taupe bg-cream px-4 py-3 text-sm text-ink outline-none"
-              >
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="dinner">Dinner</option>
-              </select>
-            </label>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {mealPlanDays.map((day) => {
+                  const isSelected = day.key === mealPlanDate
+
+                  return (
+                    <button
+                      key={day.key}
+                      type="button"
+                      onClick={() => setMealPlanDate(day.key)}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.72rem] font-semibold transition-colors ${isSelected ? 'border-ink bg-ink text-parchment' : 'border-taupe bg-cream text-oliveGray'}`}
+                    >
+                      {day.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <span className="text-sm font-semibold text-ink">Meal Type</span>
+              <div className="flex flex-wrap gap-2">
+                {QUICK_MEAL_TYPES.map((type) => {
+                  const isSelected = type === mealPlanType
+
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setMealPlanType(type)}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold ${isSelected ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             {actionError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{actionError}</p>}
           </div>
         )}

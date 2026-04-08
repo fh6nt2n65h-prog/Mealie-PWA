@@ -16,7 +16,7 @@ export function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [isError, setIsError] = useState(false)
   const [viewMode, setViewMode] = useStoredState<ViewMode>(loadViewMode, saveViewMode)
-  const [mealPlanDensity, setMealPlanDensity] = useStoredState<MealPlanDensity>(loadMealPlanDensity, saveMealPlanDensity)
+  const [, setMealPlanDensity] = useStoredState<MealPlanDensity>(loadMealPlanDensity, saveMealPlanDensity)
 
   async function handleTestConnection() {
     setTesting(true)
@@ -38,6 +38,7 @@ export function SettingsPage() {
 
   function handleSave() {
     setSaving(true)
+    setMealPlanDensity('compact')
     updateSettings(draftSettings)
     setStatus('Settings saved locally on this device.')
     setIsError(false)
@@ -53,9 +54,6 @@ export function SettingsPage() {
           </div>
           <div>
             <h2 className="font-display text-3xl tracking-[-0.03em] text-ink">Connect your kitchen</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-oliveGray">
-              This client stores the Mealie base URL and API token in local storage so it can behave like a standalone home screen app on iPhone and iPad.
-            </p>
           </div>
         </div>
 
@@ -86,24 +84,8 @@ export function SettingsPage() {
               value={viewMode}
               onChange={setViewMode}
               options={[
-                { value: 'list', label: 'List' },
                 { value: 'grid', label: 'Grid' },
                 { value: 'swipe', label: 'Swipe' }
-              ]}
-            />
-          </div>
-
-          <div className="space-y-3 rounded-[1.4rem] bg-oat/60 px-4 py-4">
-            <div>
-              <p className="text-sm font-semibold text-ink">Meal plan density</p>
-              <p className="mt-1 text-sm leading-6 text-oliveGray">Compact hides empty days and empty meal slots.</p>
-            </div>
-            <SegmentedControl
-              value={mealPlanDensity}
-              onChange={setMealPlanDensity}
-              options={[
-                { value: 'advanced', label: 'Advanced' },
-                { value: 'compact', label: 'Compact' }
               ]}
             />
           </div>
@@ -132,13 +114,6 @@ export function SettingsPage() {
             {status}
           </p>
         )}
-      </section>
-
-      <section className="rounded-card border border-taupe/70 bg-oat/60 px-5 py-6 shadow-paper sm:px-7">
-        <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Before you continue</h3>
-        <p className="mt-3 text-sm leading-6 text-oliveGray">
-          If your PWA will be installed on iPhone, the public URL used in Safari must ultimately be HTTPS. The app still works against a local HTTP base URL inside your own network, but service workers and installability depend on the secure reverse proxy described in the README.
-        </p>
       </section>
     </div>
   )

@@ -68,7 +68,7 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, compact = fa
       onTouchEnd={clearLongPressTimer}
       onTouchCancel={clearLongPressTimer}
       className={clsx(
-        'h-full overflow-hidden rounded-card border border-taupe/75 bg-parchment text-left shadow-paper transition-transform duration-200 hover:-translate-y-1',
+        'h-full overflow-hidden rounded-card border border-taupe/75 bg-parchment text-left shadow-paper transition-transform duration-200 hover:-translate-y-1 select-none touch-manipulation [user-select:none] [-webkit-touch-callout:none]',
         compact ? 'grid grid-cols-[1fr_auto] gap-5 p-4' : 'flex flex-col'
       )}
     >
@@ -90,14 +90,14 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, compact = fa
 
         <p className={clsx('text-oliveGray', featured ? 'line-clamp-4 min-h-[6rem] text-base leading-7' : 'line-clamp-3 min-h-[4.75rem] text-sm leading-6')}>{recipe.description || 'A quiet favorite waiting to be cooked again.'}</p>
 
-        <div className="mt-auto flex min-h-[2.25rem] flex-wrap gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-oliveGray">
+        <div className="mt-auto flex min-h-[2rem] flex-wrap gap-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-oliveGray">
           {recipe.recipeCategory?.slice(0, 2).map((category) => (
-            <span key={category.slug} className="rounded-full bg-oat px-3 py-1">
+            <span key={category.slug} className="rounded-full bg-oat px-2.5 py-0.5">
               {category.name}
             </span>
           ))}
           {recipe.tags?.slice(0, 1).map((tag) => (
-            <span key={tag.slug} className="rounded-full bg-sage/25 px-3 py-1 text-olive">
+            <span key={tag.slug} className="rounded-full bg-sage/25 px-2.5 py-0.5 text-olive">
               {tag.name}
             </span>
           ))}

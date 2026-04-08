@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
-import type { CreateMealPlanEntryInput, MealPlanDensity, MealPlanEntry, PlanEntryType, RecipeSummary, UpdateMealPlanEntryInput } from '@/types/mealie'
+import type { CreateMealPlanEntryInput, MealPlanEntry, PlanEntryType, RecipeSummary, UpdateMealPlanEntryInput } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
 import { SearchField } from '@/components/search-field'
-import { useStoredState } from '@/hooks/use-stored-state'
 import { getRecipeCache } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
-import { loadMealPlanDensity, saveMealPlanDensity } from '@/lib/storage'
 import { formatDayLabel, formatSectionDate } from '@/lib/utils'
 
 const MEAL_TYPES: PlanEntryType[] = ['breakfast', 'lunch', 'dinner']
@@ -65,7 +63,6 @@ export function MealPlanPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
-  const [density] = useStoredState<MealPlanDensity>(loadMealPlanDensity, saveMealPlanDensity)
   const [selectedDayKey, setSelectedDayKey] = useState(CALENDAR_DAYS[0]?.key || dayjs().format('YYYY-MM-DD'))
   const [editorOpen, setEditorOpen] = useState(false)
   const [draft, setDraft] = useState<MealPlanDraft>(createDraft(CALENDAR_DAYS[0]?.key || dayjs().format('YYYY-MM-DD'), 'dinner'))
@@ -147,14 +144,7 @@ export function MealPlanPage() {
     entriesByDate.set(entry.date, dayEntries)
   })
 
-  const visibleDays = calendarDays.filter((day) => {
-    if (density === 'advanced') {
-      return true
-    }
-
-    const dayEntries = entriesByDate.get(day.key) || []
-    return dayEntries.length > 0
-  })
+  const visibleDays = calendarDays
 
   const filteredRecipeOptions = useMemo(() => {
     const normalizedQuery = recipeSearch.trim().toLowerCase()
@@ -368,9 +358,7 @@ export function MealPlanPage() {
 
         {loading && <EmptyState title="Loading the plan" description="Collecting meal entries for the next two weeks." />}
         {!loading && error && <EmptyState title="Meal plan unavailable" description={error} />}
-        {!loading && !error && visibleDays.length === 0 && (
-          <EmptyState title="Nothing planned yet" description="Switch to advanced mode to see empty days, or start planning in Mealie and refresh this view." />
-        )}
+        {!loading && !error && visibleDays.length === 0 && <EmptyState title="Nothing planned yet" description="Start planning in Mealie and refresh this view." />}
 
         {!loading && !error && visibleDays.length > 0 && (
           <div className="space-y-4">
@@ -396,10 +384,6 @@ export function MealPlanPage() {
                     {MEAL_TYPES.map((mealType) => {
                       const mealEntries = dayEntries.filter((entry) => entry.entryType === mealType)
 
-                      if (density === 'compact' && mealEntries.length === 0) {
-                        return null
-                      }
-
                       return (
                         <article key={`${day.key}-${mealType}`} className="rounded-[1.4rem] bg-cream px-4 py-4 shadow-paper">
                           <div className="flex items-center justify-between gap-3">
@@ -423,7 +407,7 @@ export function MealPlanPage() {
                                   <div className="flex items-start justify-between gap-4">
                                     <div>
                                       <p className="font-display text-2xl tracking-[-0.03em] text-ink">{entry.recipe?.name || entry.title || 'Planned item'}</p>
-                                      <p className="mt-1 text-sm leading-6 text-oliveGray">{entry.text || entry.recipe?.description || 'Planned from your Mealie household.'}</p>
+                                      {!entry.recipe && entry.text && <p className="mt-1 text-sm leading-6 text-oliveGray">{entry.text}</p>}
                                     </div>
 
                                     <div className="flex gap-2">
@@ -492,29 +476,44 @@ export function MealPlanPage() {
       >
         <div className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="block space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <span className="text-sm font-semibold text-ink">Date</span>
-              <input
-                type="date"
-                value={draft.date}
-                onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))}
-                className="w-full rounded-[1.25rem] border border-taupe bg-cream px-4 py-3 text-sm text-ink outline-none"
-              />
-            </label>
+              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+                {calendarDays.map((day) => {
+                  const selected = draft.date === day.key
+
+                  return (
+                    <button
+                      key={day.key}
+                      type="button"
+                      onClick={() => setDraft((current) => ({ ...current, date: day.key }))}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.72rem] font-semibold transition-colors sm:px-4 sm:py-2 ${selected ? 'border-ink bg-ink text-parchment' : 'border-taupe bg-cream text-oliveGray'}`}
+                    >
+                      {day.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
             <label className="block space-y-2">
-              <span className="text-sm font-semibold text-ink">Meal type</span>
-              <select
-                value={draft.entryType}
-                onChange={(event) => setDraft((current) => ({ ...current, entryType: event.target.value as PlanEntryType }))}
-                className="w-full rounded-[1.25rem] border border-taupe bg-cream px-4 py-3 text-sm text-ink outline-none"
-              >
-                {MEAL_TYPES.map((mealType) => (
-                  <option key={mealType} value={mealType}>
-                    {titleize(mealType)}
-                  </option>
-                ))}
-              </select>
+              <span className="text-sm font-semibold text-ink">Meal Type</span>
+              <div className="flex flex-wrap gap-2 rounded-[1.25rem] border border-taupe bg-cream px-3 py-3">
+                {MEAL_TYPES.map((mealType) => {
+                  const selected = draft.entryType === mealType
+
+                  return (
+                    <button
+                      key={mealType}
+                      type="button"
+                      onClick={() => setDraft((current) => ({ ...current, entryType: mealType }))}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold ${selected ? 'bg-ink text-parchment' : 'bg-parchment text-ink'}`}
+                    >
+                      {titleize(mealType)}
+                    </button>
+                  )
+                })}
+              </div>
             </label>
           </div>
 
@@ -554,7 +553,6 @@ export function MealPlanPage() {
                       className={`w-full rounded-[1.1rem] px-4 py-3 text-left ${selected ? 'bg-ink text-parchment' : 'bg-parchment text-ink'}`}
                     >
                       <p className="font-semibold">{recipe.name || 'Untitled recipe'}</p>
-                      {recipe.description && <p className={`mt-1 text-sm leading-6 ${selected ? 'text-parchment/80' : 'text-oliveGray'}`}>{recipe.description}</p>}
                     </button>
                   )
                 })}

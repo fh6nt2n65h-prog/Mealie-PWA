@@ -55,7 +55,9 @@ export function saveSettings(settings: ApiSettings) {
 }
 
 export function loadViewMode(): ViewMode {
-  return readLocalStorage<ViewMode>(VIEW_MODE_KEY, 'grid')
+  const stored = readLocalStorage<ViewMode | 'list'>(VIEW_MODE_KEY, 'grid')
+
+  return stored === 'list' ? 'grid' : stored
 }
 
 export function saveViewMode(viewMode: ViewMode) {
@@ -67,7 +69,7 @@ export function saveViewMode(viewMode: ViewMode) {
 }
 
 export function loadMealPlanDensity(): MealPlanDensity {
-  return readLocalStorage<MealPlanDensity>(MEAL_PLAN_DENSITY_KEY, 'advanced')
+  return 'compact'
 }
 
 export function saveMealPlanDensity(density: MealPlanDensity) {
@@ -75,5 +77,5 @@ export function saveMealPlanDensity(density: MealPlanDensity) {
     return
   }
 
-  window.localStorage.setItem(MEAL_PLAN_DENSITY_KEY, JSON.stringify(density))
+  window.localStorage.setItem(MEAL_PLAN_DENSITY_KEY, JSON.stringify('compact'))
 }
