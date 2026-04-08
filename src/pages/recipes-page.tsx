@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
+import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
@@ -46,11 +47,10 @@ export function RecipesPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
-  const [scanningIngredients, setScanningIngredients] = useState(false)
   const [searchValue, setSearchValue] = useState('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [viewMode] = useStoredState<ViewMode>(loadViewMode, saveViewMode)
   const [swipeIndex, setSwipeIndex] = useState(0)
-  const [lastUpdated, setLastUpdated] = useState('')
   const [pullDistance, setPullDistance] = useState(0)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createMode, setCreateMode] = useState<'menu' | 'url' | 'image'>('menu')
@@ -118,7 +118,6 @@ export function RecipesPage() {
     }
 
     setError('')
-    setScanningIngredients(false)
 
     try {
       const api = new MealieApi(settings)
@@ -128,17 +127,15 @@ export function RecipesPage() {
         return
       }
 
-      setScanningIngredients(true)
       const detailedRecipes = await hydrateRecipes(api, response.items)
 
       if (requestIdRef.current !== requestId) {
         return
       }
 
-      const cacheEntry = setRecipeCache(settings, detailedRecipes)
+      setRecipeCache(settings, detailedRecipes)
       markRecipesLoadedThisSession(settings)
       setRecipes(detailedRecipes)
-      setLastUpdated(cacheEntry.updatedAt)
     } catch (loadError) {
       if (requestIdRef.current === requestId) {
         setError(loadError instanceof Error ? loadError.message : 'Unable to load recipes right now.')
@@ -147,7 +144,6 @@ export function RecipesPage() {
       if (requestIdRef.current === requestId) {
         setLoading(false)
         setRefreshing(false)
-        setScanningIngredients(false)
       }
     }
   }
@@ -165,7 +161,6 @@ export function RecipesPage() {
 
     if (cacheEntry) {
       setRecipes(cacheEntry.recipes)
-      setLastUpdated(cacheEntry.updatedAt)
       setLoading(false)
     }
 
@@ -232,7 +227,6 @@ export function RecipesPage() {
     const cacheEntry = upsertRecipeCacheEntry(settings, detail)
 
     setRecipes(cacheEntry.recipes)
-    setLastUpdated(cacheEntry.updatedAt)
     resetCreateDialog()
     navigate(`/recipes/${detail.slug}`)
   }
@@ -324,7 +318,6 @@ export function RecipesPage() {
 
       if (cacheEntry) {
         setRecipes(cacheEntry.recipes)
-        setLastUpdated(cacheEntry.updatedAt)
       }
 
       closeRecipeActions(true)
@@ -358,6 +351,53 @@ export function RecipesPage() {
     }
   }
 
+  useHeaderSlots({
+    sideContent: settings.apiToken ? (
+      <div className="flex items-center gap-2">
+        <div className={`overflow-hidden transition-all duration-200 ease-out ${isSearchOpen ? 'w-[min(58vw,15rem)]' : 'w-10'}`}>
+          {isSearchOpen ? (
+            <div className="flex items-center gap-2">
+              <SearchField value={searchValue} onChange={setSearchValue} placeholder="Search recipes" className="min-w-0 flex-1 px-3 py-2 text-sm" />
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchValue('')
+                }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe/70 bg-parchment text-oliveGray shadow-paper"
+                aria-label="Close recipe search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe/70 bg-parchment text-oliveGray shadow-paper"
+              aria-label="Open recipe search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowCreateDialog(true)
+            setCreateMode('menu')
+            setCreateError('')
+          }}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-olive text-parchment shadow-paper"
+          aria-label="Add recipe"
+        >
+          <Plus className="h-4.5 w-4.5" />
+        </button>
+      </div>
+    ) : undefined
+  })
+
   if (!settings.apiToken) {
     return (
       <div className="space-y-4 animate-rise">
@@ -385,32 +425,6 @@ export function RecipesPage() {
             {refreshing ? 'Refreshing' : 'Pull to refresh'}
           </div>
         </div>
-
-        <section className="space-y-3">
-          <div className="flex items-center gap-3">
-            <SearchField value={searchValue} onChange={setSearchValue} placeholder="Search names and ingredients" className="flex-1" />
-            <button
-              type="button"
-              onClick={() => {
-                setShowCreateDialog(true)
-                setCreateMode('menu')
-                setCreateError('')
-              }}
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-olive text-parchment shadow-paper"
-              aria-label="Add recipe"
-            >
-              <Plus className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-between gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">
-            <span>{filteredRecipes.length} recipes visible</span>
-            <div className="flex items-center gap-3">
-              {scanningIngredients && <span>Refreshing ingredient text…</span>}
-              {lastUpdated && <span>Cached {new Date(lastUpdated).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>}
-            </div>
-          </div>
-        </section>
 
         {loading && recipes.length === 0 && <EmptyState title="Fetching recipes" description="Pulling your library from Mealie and building the ingredient search index." />}
 

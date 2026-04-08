@@ -42,20 +42,20 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             onDragEnd={(_, info) => {
-              if (info.offset.x < -90) {
+              if (info.offset.x < -60) {
                 goTo(currentIndex + 1)
               }
 
-              if (info.offset.x > 90) {
+              if (info.offset.x > 60) {
                 goTo(currentIndex - 1)
               }
             }}
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -18, scale: 0.98 }}
-            transition={{ duration: 0.24, ease: 'easeOut' }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
           >
-            <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} onLongPress={onLongPress ? () => onLongPress(recipe) : undefined} />
+            <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} onLongPress={onLongPress ? () => onLongPress(recipe) : undefined} featured />
           </motion.div>
         </AnimatePresence>
       </div>

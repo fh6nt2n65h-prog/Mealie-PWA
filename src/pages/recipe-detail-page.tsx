@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ExternalLink, Minus, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { Minus, Plus, Sparkles, Trash2 } from 'lucide-react'
 import type { Recipe } from '@/types/mealie'
 import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
@@ -108,12 +108,12 @@ export function RecipeDetailPage() {
 
       <section className="overflow-hidden rounded-card border border-taupe/70 bg-parchment shadow-paper">
         {image ? (
-          <div className="bg-oat p-4 sm:p-5">
-            <img src={image} alt={recipe.name || 'Recipe'} className="aspect-[5/4] w-full rounded-[1.5rem] object-cover sm:aspect-[16/9]" />
+          <div className="bg-oat p-2 sm:p-3">
+            <img src={image} alt={recipe.name || 'Recipe'} className="aspect-[4/5] w-full rounded-[1.65rem] object-cover sm:aspect-[5/4]" />
           </div>
         ) : null}
 
-        <div className="space-y-5 px-5 py-6 sm:px-7">
+        <div className="space-y-5 px-5 py-5 sm:px-7">
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-oliveGray">
               <span>{formatDuration(recipe.totalTime)}</span>
@@ -124,44 +124,33 @@ export function RecipeDetailPage() {
             <p className="max-w-2xl text-sm leading-7 text-oliveGray">{recipe.description || 'A recipe collected into your private cooking journal.'}</p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => setScale((current) => Math.max(0.5, current - 0.5))}
-              className="inline-flex items-center gap-2 rounded-full border border-taupe bg-cream px-4 py-3 text-sm font-semibold text-ink"
-            >
-              <Minus className="h-4 w-4" />
-              Scale {scale}x
-            </button>
-            <button
-              type="button"
-              onClick={() => setScale((current) => Math.min(4, current + 0.5))}
-              className="inline-flex items-center gap-2 rounded-full border border-taupe bg-cream px-4 py-3 text-sm font-semibold text-ink"
-            >
-              <Plus className="h-4 w-4" />
-              Increase
-            </button>
+          <div className="flex flex-wrap gap-2.5">
+            <div className="inline-flex items-center gap-2 rounded-full border border-taupe bg-cream px-2 py-1.5 text-sm font-semibold text-ink">
+              <span className="px-2 text-xs uppercase tracking-[0.18em] text-oliveGray">Servings</span>
+              <button type="button" onClick={() => setScale((current) => Math.max(0.5, current - 0.5))} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-parchment text-ink">
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span className="min-w-[2.5rem] text-center">{scale}x</span>
+              <button type="button" onClick={() => setScale((current) => Math.min(4, current + 0.5))} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-parchment text-ink">
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <button
               type="button"
               onClick={() => setCookMode((current) => !current)}
-              className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-3 text-sm font-semibold text-parchment"
+              className="inline-flex items-center gap-2 rounded-full bg-ink px-3.5 py-2.5 text-xs font-semibold text-parchment"
             >
-              <Sparkles className="h-4 w-4" />
+              <Sparkles className="h-3.5 w-3.5" />
               {cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
             </button>
-            {recipe.orgURL && (
-              <a href={recipe.orgURL} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-taupe bg-cream px-4 py-3 text-sm font-semibold text-ink">
-                <ExternalLink className="h-4 w-4" />
-                Source
-              </a>
-            )}
             <button
               type="button"
               onClick={handleDeleteRecipe}
-              className="inline-flex items-center gap-2 rounded-full border border-terracotta/30 bg-terracotta/10 px-4 py-3 text-sm font-semibold text-terracotta"
+              disabled={deleting}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="Delete recipe"
             >
               <Trash2 className="h-4 w-4" />
-              {deleting ? 'Deleting…' : 'Delete Recipe'}
             </button>
           </div>
 

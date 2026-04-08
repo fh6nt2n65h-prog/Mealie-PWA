@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { CreateMealPlanEntryInput, MealPlanDensity, MealPlanEntry, PlanEntryType, RecipeSummary, UpdateMealPlanEntryInput } from '@/types/mealie'
+import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
@@ -75,7 +76,6 @@ export function MealPlanPage() {
   const [recipeSearch, setRecipeSearch] = useState('')
   const [loadingRecipeOptions, setLoadingRecipeOptions] = useState(false)
   const [pullDistance, setPullDistance] = useState(0)
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
   const daySectionsRef = useRef<Record<string, HTMLElement | null>>({})
   const touchStartRef = useRef<number | null>(null)
   const calendarDays = CALENDAR_DAYS
@@ -173,14 +173,18 @@ export function MealPlanPage() {
   function jumpToDay(dayKey: string) {
     setSelectedDayKey(dayKey)
 
-    const container = scrollContainerRef.current
+    const container = getScrollRoot()
     const target = daySectionsRef.current[dayKey]
 
     if (!container || !target) {
       return
     }
 
-    container.scrollTo({ top: target.offsetTop - 12, behavior: 'smooth' })
+    const containerRect = container.getBoundingClientRect()
+    const targetRect = target.getBoundingClientRect()
+    const nextTop = container.scrollTop + targetRect.top - containerRect.top - 12
+
+    container.scrollTo({ top: nextTop, behavior: 'smooth' })
   }
 
   function getScrollRoot() {
@@ -328,6 +332,28 @@ export function MealPlanPage() {
     }
   }
 
+  useHeaderSlots({
+    bottomContent: settings.apiToken ? (
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        {calendarDays.map((day) => {
+          const hasEntries = (entriesByDate.get(day.key) || []).length > 0
+          const isSelected = day.key === selectedDayKey
+
+          return (
+            <button
+              key={day.key}
+              type="button"
+              onClick={() => jumpToDay(day.key)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.72rem] font-semibold transition-colors sm:px-4 sm:py-2 ${isSelected ? 'border-ink bg-ink text-parchment' : hasEntries ? 'border-sage/60 bg-sage/15 text-olive' : 'border-taupe bg-cream text-oliveGray'}`}
+            >
+              {day.label}
+            </button>
+          )
+        })}
+      </div>
+    ) : undefined
+  })
+
   return (
     <>
       <div className="space-y-5 animate-rise" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
@@ -340,26 +366,6 @@ export function MealPlanPage() {
           </div>
         </div>
 
-        <section className="rounded-card border border-taupe/70 bg-parchment px-4 py-4 shadow-paper sm:px-5">
-          <div className="flex gap-2 overflow-x-auto pb-1">
-              {calendarDays.map((day) => {
-                const hasEntries = (entriesByDate.get(day.key) || []).length > 0
-                const isSelected = day.key === selectedDayKey
-
-                return (
-                  <button
-                    key={day.key}
-                    type="button"
-                    onClick={() => jumpToDay(day.key)}
-                    className={`shrink-0 rounded-full border px-3 py-2 text-xs font-semibold transition-colors sm:px-4 sm:py-3 sm:text-sm ${isSelected ? 'border-ink bg-ink text-parchment' : hasEntries ? 'border-sage/60 bg-sage/15 text-olive' : 'border-taupe bg-cream text-oliveGray'}`}
-                  >
-                    {day.label}
-                  </button>
-                )
-              })}
-          </div>
-        </section>
-
         {loading && <EmptyState title="Loading the plan" description="Collecting meal entries for the next two weeks." />}
         {!loading && error && <EmptyState title="Meal plan unavailable" description={error} />}
         {!loading && !error && visibleDays.length === 0 && (
@@ -367,7 +373,7 @@ export function MealPlanPage() {
         )}
 
         {!loading && !error && visibleDays.length > 0 && (
-          <div ref={scrollContainerRef} className="space-y-4">
+          <div className="space-y-4">
             {visibleDays.map((day) => {
               const dayEntries = entriesByDate.get(day.key) || []
 
@@ -401,10 +407,10 @@ export function MealPlanPage() {
                             <button
                               type="button"
                               onClick={() => openCreateDialog(day.key, mealType)}
-                              className="inline-flex items-center gap-2 rounded-full border border-taupe bg-parchment px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-ink"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-taupe bg-parchment text-ink"
+                              aria-label={`Add ${mealType} entry`}
                             >
                               <Plus className="h-3.5 w-3.5" />
-                              Add
                             </button>
                           </div>
 
@@ -424,18 +430,18 @@ export function MealPlanPage() {
                                       <button
                                         type="button"
                                         onClick={() => openEditDialog(entry)}
-                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
                                         aria-label="Edit meal plan entry"
                                       >
-                                        <Pencil className="h-4 w-4" />
+                                        <Pencil className="h-3.5 w-3.5" />
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => void handleDeleteEntry(entry.id)}
-                                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta"
+                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta"
                                         aria-label="Delete meal plan entry"
                                       >
-                                        <Trash2 className="h-4 w-4" />
+                                        <Trash2 className="h-3.5 w-3.5" />
                                       </button>
                                     </div>
                                   </div>
