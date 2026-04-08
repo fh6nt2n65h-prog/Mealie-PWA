@@ -30,7 +30,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-[880px] flex-col overflow-hidden bg-halo bg-[length:100%_100%] px-3 pb-2 pt-3 sm:px-5 sm:pt-5">
-      <div className="app-shell-frame flex h-full flex-col overflow-hidden rounded-shell border border-taupe/70 bg-cream/95 shadow-paper ring-1 ring-white/70 backdrop-blur-sm">
+      <div className="app-shell-frame flex h-full flex-col overflow-hidden rounded-shell border border-taupe/70 bg-cream/95 shadow-paper ring-1 ring-white/70">
         <header className="safe-top border-b border-b-taupe/70 bg-wash px-5 pb-3 pt-4 sm:px-7 sm:pb-4 sm:pt-5">
           <div className="flex items-start justify-between gap-4">
             <div className="max-w-[32rem] animate-rise">

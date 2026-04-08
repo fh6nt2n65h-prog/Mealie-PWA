@@ -16,7 +16,7 @@ export function DialogSheet({ open, title, description, onClose, children, foote
     <AnimatePresence initial={false}>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 px-3 pb-3 pt-10 backdrop-blur-sm sm:px-6 sm:pb-6"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink/45 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-[max(2.5rem,env(safe-area-inset-top))] backdrop-blur-sm sm:px-6 sm:pb-6"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -24,7 +24,7 @@ export function DialogSheet({ open, title, description, onClose, children, foote
           transition={{ duration: 0.14, ease: 'easeOut' }}
         >
           <motion.div
-            className="max-h-[88dvh] w-full max-w-2xl overflow-hidden rounded-[2rem] border border-taupe/70 bg-parchment shadow-paper"
+            className="flex max-h-[calc(100%-0.75rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] border border-taupe/70 bg-parchment shadow-paper sm:max-h-[88dvh]"
             onClick={(event) => event.stopPropagation()}
             initial={{ opacity: 0.98, y: 96 }}
             animate={{ opacity: 1, y: 0 }}
@@ -47,7 +47,7 @@ export function DialogSheet({ open, title, description, onClose, children, foote
               </button>
             </div>
 
-            <div className="max-h-[calc(88dvh-10.5rem)] overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
             {footer && <div className="sticky bottom-0 border-t border-taupe/60 bg-cream/60 px-5 py-4 sm:px-6">{footer}</div>}
           </motion.div>

@@ -361,6 +361,25 @@ export function MealPlanPage() {
         {!loading && !error && visibleDays.length === 0 && <EmptyState title="Nothing planned yet" description="Tap a day in the header strip, then use the + button to add your first meal." />}
 
         {!loading && !error && (
+          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
+            {calendarDays.map((day) => (
+              <button
+                key={`quick-add-${day.key}`}
+                type="button"
+                onClick={() => openCreateDialog(day.key, 'dinner')}
+                className="rounded-[1rem] border border-taupe/70 bg-parchment px-3 py-3 text-left shadow-paper transition-colors hover:bg-cream"
+              >
+                <p className="text-[0.64rem] font-semibold uppercase tracking-[0.2em] text-oliveGray">{day.label}</p>
+                <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-oat px-2.5 py-1 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-ink">
+                  <Plus className="h-3 w-3" />
+                  Add
+                </p>
+              </button>
+            ))}
+          </section>
+        )}
+
+        {!loading && !error && (
           <div className="space-y-4">
             {visibleDays.map((day) => {
               const dayEntries = entriesByDate.get(day.key) || []
