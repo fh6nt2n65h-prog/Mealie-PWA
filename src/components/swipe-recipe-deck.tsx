@@ -37,7 +37,7 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
   }
 
   return (
-    <div className="relative min-h-[420px] overflow-hidden">
+    <div className="relative h-[calc(100dvh-14rem)] min-h-[34rem] overflow-hidden sm:h-[calc(100dvh-16rem)] sm:min-h-[38rem]">
       <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={recipe.slug}

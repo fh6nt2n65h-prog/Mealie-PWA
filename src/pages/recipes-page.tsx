@@ -80,7 +80,8 @@ export function RecipesPage() {
   const [actionError, setActionError] = useState('')
   const requestIdRef = useRef(0)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
-  const touchStartRef = useRef<number | null>(null)
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const touchIntentRef = useRef<'undetermined' | 'vertical' | 'horizontal'>('undetermined')
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
 
@@ -220,10 +221,23 @@ export function RecipesPage() {
   }
 
   function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
+    if (viewMode === 'swipe') {
+      touchStartRef.current = null
+      touchIntentRef.current = 'horizontal'
+      return
+    }
+
     const scrollRoot = getScrollRoot()
 
     if (scrollRoot && scrollRoot.scrollTop <= 0 && !refreshing) {
-      touchStartRef.current = event.touches[0]?.clientY || null
+      const touch = event.touches[0]
+
+      if (!touch) {
+        return
+      }
+
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY }
+      touchIntentRef.current = 'undetermined'
     }
   }
 
@@ -239,16 +253,41 @@ export function RecipesPage() {
       return
     }
 
-    const delta = (event.touches[0]?.clientY || 0) - touchStartRef.current
+    const touch = event.touches[0]
 
-    if (delta > 0) {
-      setPullDistance(Math.min(delta * 0.45, 96))
+    if (!touch) {
+      return
+    }
+
+    const deltaY = touch.clientY - touchStartRef.current.y
+    const deltaX = touch.clientX - touchStartRef.current.x
+
+    if (touchIntentRef.current === 'undetermined') {
+      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
+        touchIntentRef.current = 'horizontal'
+        setPullDistance(0)
+        return
+      }
+
+      if (Math.abs(deltaY) > 10) {
+        touchIntentRef.current = 'vertical'
+      }
+    }
+
+    if (touchIntentRef.current === 'horizontal') {
+      setPullDistance(0)
+      return
+    }
+
+    if (deltaY > 0) {
+      setPullDistance(Math.min(deltaY * 0.45, 96))
     }
   }
 
   function handleTouchEnd() {
-    const shouldRefresh = pullDistance >= 56
+    const shouldRefresh = touchIntentRef.current === 'vertical' && pullDistance >= 56
     touchStartRef.current = null
+    touchIntentRef.current = 'undetermined'
     setPullDistance(0)
 
     if (shouldRefresh) {

@@ -1,13 +1,8 @@
-import { useRef } from 'react'
 import dayjs from 'dayjs'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { HeaderSlotsProvider, useHeaderSlotState } from '@/app/header-slots-context'
 import { BottomNav } from '@/components/bottom-nav'
-
-const TAB_ROUTES = ['/recipes', '/meal-plan', '/shopping-list', '/settings']
-const EDGE_ZONE = 24
-const SWIPE_MIN = 50
 
 function resolveTitle(pathname: string) {
   if (pathname.startsWith('/meal-plan')) {
@@ -29,69 +24,13 @@ function resolveTitle(pathname: string) {
   return 'Recipes'
 }
 
-function getTabIndex(pathname: string) {
-  return TAB_ROUTES.indexOf(pathname)
-}
-
 function AppShellFrame({ children }: { children: ReactNode }) {
   const location = useLocation()
-  const navigate = useNavigate()
   const slots = useHeaderSlotState()
-
-  const tabIndex = getTabIndex(location.pathname)
-  const swipeRef = useRef<{ x: number; y: number } | null>(null)
-  const isTopLevelTab = tabIndex >= 0
-
-  function handleEdgeTouchStart(event: React.TouchEvent) {
-    if (!isTopLevelTab) {
-      return
-    }
-
-    const touch = event.touches[0]
-
-    if (!touch) {
-      return
-    }
-
-    const x = touch.clientX
-
-    if (x <= EDGE_ZONE || x >= window.innerWidth - EDGE_ZONE) {
-      swipeRef.current = { x, y: touch.clientY }
-    }
-  }
-
-  function handleEdgeTouchEnd(event: React.TouchEvent) {
-    if (!swipeRef.current || !isTopLevelTab) {
-      swipeRef.current = null
-      return
-    }
-
-    const touch = event.changedTouches[0]
-
-    if (!touch) {
-      swipeRef.current = null
-      return
-    }
-
-    const dx = touch.clientX - swipeRef.current.x
-    const dy = Math.abs(touch.clientY - swipeRef.current.y)
-    const adx = Math.abs(dx)
-    swipeRef.current = null
-
-    if (adx < SWIPE_MIN || adx < dy * 1.2) {
-      return
-    }
-
-    if (dx > 0 && tabIndex > 0) {
-      navigate(TAB_ROUTES[tabIndex - 1])
-    } else if (dx < 0 && tabIndex < TAB_ROUTES.length - 1) {
-      navigate(TAB_ROUTES[tabIndex + 1])
-    }
-  }
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-[880px] flex-col overflow-hidden bg-halo bg-[length:100%_100%] px-3 pb-2 pt-3 sm:px-5 sm:pt-5">
-      <div className="flex h-full flex-col overflow-hidden rounded-shell border border-taupe/70 bg-cream/95 shadow-paper ring-1 ring-white/70 backdrop-blur-sm">
+      <div className="app-shell-frame flex h-full flex-col overflow-hidden rounded-shell border border-taupe/70 bg-cream/95 shadow-paper ring-1 ring-white/70 backdrop-blur-sm">
         <header className="safe-top border-b border-b-taupe/70 bg-wash px-5 pb-3 pt-4 sm:px-7 sm:pb-4 sm:pt-5">
           <div className="flex items-start justify-between gap-4">
             <div className="max-w-[32rem] animate-rise">
@@ -104,16 +43,13 @@ function AppShellFrame({ children }: { children: ReactNode }) {
           {slots.bottomContent && <div className="mt-3">{slots.bottomContent}</div>}
         </header>
 
-        <main
-          id="app-scroll-root"
-          className="grain-bg relative flex-1 overflow-y-auto px-5 pb-6 pt-3 sm:px-7 sm:pb-8"
-          onTouchStart={handleEdgeTouchStart}
-          onTouchEnd={handleEdgeTouchEnd}
-        >
-          {children}
-        </main>
+        <div className="app-shell-body flex min-h-0 flex-1 flex-col">
+          <main id="app-scroll-root" className="grain-bg relative min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-3 sm:px-7 sm:pb-8">
+            {children}
+          </main>
 
-        <BottomNav />
+          <BottomNav />
+        </div>
       </div>
     </div>
   )

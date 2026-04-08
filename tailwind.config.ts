@@ -17,7 +17,7 @@ export default {
       },
       fontFamily: {
         display: ['Fraunces', 'Georgia', 'serif'],
-        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif']
+        sans: ['Roboto Condensed', 'ui-sans-serif', 'system-ui', 'sans-serif']
       },
       boxShadow: {
         paper: '0 14px 35px rgba(86, 72, 51, 0.08)',
