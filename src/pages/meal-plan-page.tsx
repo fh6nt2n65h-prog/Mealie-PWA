@@ -414,8 +414,7 @@ export function MealPlanPage() {
                 >
                   <div className="mb-4 flex items-center justify-between border-b border-b-taupe/60 pb-4">
                     <div>
-                      <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{day.label}</p>
-                      <h3 className="mt-1 font-display text-3xl tracking-[-0.03em] text-ink">{formatSectionDate(day.key)}</h3>
+                      <h3 className="font-display text-3xl tracking-[-0.03em] text-ink">{formatSectionDate(day.key)}</h3>
                     </div>
                     <button
                       type="button"
