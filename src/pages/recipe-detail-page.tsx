@@ -166,13 +166,13 @@ export function RecipeDetailPage() {
               const scaledValue = scaleQuantity(ingredient.quantity, scale)
 
               return (
-                <li key={`${ingredient.food?.name || ingredient.display || 'ingredient'}-${index}`} className="rounded-[1.2rem] bg-parchment px-4 py-3 shadow-paper">
-                  <p className="text-sm font-semibold text-ink">
+                <li key={`${ingredient.food?.name || ingredient.display || 'ingredient'}-${index}`} className="rounded-[1.2rem] bg-parchment px-4 py-2 shadow-paper">
+                  <p className="text-sm font-semibold leading-snug text-ink">
                     {scaledValue !== null ? `${scaledValue} ` : ''}
                     {ingredient.unit?.abbreviation || ingredient.unit?.name ? `${ingredient.unit?.abbreviation || ingredient.unit?.name} ` : ''}
                     {ingredient.food?.name || ingredient.display || ingredient.originalText || 'Ingredient'}
                   </p>
-                  {ingredient.note && <p className="mt-1 text-sm leading-6 text-oliveGray">{ingredient.note}</p>}
+                  {ingredient.note && <p className="mt-0.5 line-clamp-1 text-xs leading-5 text-oliveGray">{ingredient.note}</p>}
                 </li>
               )
             })}

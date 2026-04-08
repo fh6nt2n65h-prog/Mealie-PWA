@@ -68,7 +68,7 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, compact = fa
       onTouchEnd={clearLongPressTimer}
       onTouchCancel={clearLongPressTimer}
       className={clsx(
-        'h-full overflow-hidden rounded-card border border-taupe/75 bg-parchment text-left shadow-paper transition-transform duration-200 hover:-translate-y-1 select-none touch-manipulation [user-select:none] [-webkit-touch-callout:none]',
+        'h-full overflow-hidden rounded-card border border-taupe/75 bg-parchment text-left shadow-paper select-none touch-manipulation [user-select:none] [-webkit-touch-callout:none]',
         compact ? 'grid grid-cols-[1fr_auto] gap-5 p-4' : 'flex flex-col'
       )}
     >

@@ -75,6 +75,8 @@ export function MealPlanPage() {
   const [pullDistance, setPullDistance] = useState(0)
   const daySectionsRef = useRef<Record<string, HTMLElement | null>>({})
   const touchStartRef = useRef<number | null>(null)
+  const suppressDayJumpRef = useRef(false)
+  const dayLongPressTimerRef = useRef<number | null>(null)
   const calendarDays = CALENDAR_DAYS
 
   async function loadMealPlan(options?: { background?: boolean }) {
@@ -222,6 +224,25 @@ export function MealPlanPage() {
     }
   }
 
+  function startDayLongPress(dayKey: string) {
+    if (dayLongPressTimerRef.current !== null) {
+      window.clearTimeout(dayLongPressTimerRef.current)
+    }
+
+    dayLongPressTimerRef.current = window.setTimeout(() => {
+      suppressDayJumpRef.current = true
+      dayLongPressTimerRef.current = null
+      openCreateDialog(dayKey, 'dinner')
+    }, 480)
+  }
+
+  function clearDayLongPress() {
+    if (dayLongPressTimerRef.current !== null) {
+      window.clearTimeout(dayLongPressTimerRef.current)
+      dayLongPressTimerRef.current = null
+    }
+  }
+
   function openCreateDialog(dayKey: string, entryType: PlanEntryType) {
     setDraft(createDraft(dayKey, entryType))
     setRecipeSearch('')
@@ -333,7 +354,24 @@ export function MealPlanPage() {
             <button
               key={day.key}
               type="button"
-              onClick={() => jumpToDay(day.key)}
+              onClick={() => {
+                if (suppressDayJumpRef.current) {
+                  suppressDayJumpRef.current = false
+                  return
+                }
+
+                jumpToDay(day.key)
+              }}
+              onMouseDown={() => startDayLongPress(day.key)}
+              onMouseUp={clearDayLongPress}
+              onMouseLeave={clearDayLongPress}
+              onTouchStart={() => startDayLongPress(day.key)}
+              onTouchEnd={clearDayLongPress}
+              onTouchCancel={clearDayLongPress}
+              onContextMenu={(event) => {
+                event.preventDefault()
+                openCreateDialog(day.key, 'dinner')
+              }}
               className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.72rem] font-semibold transition-colors sm:px-4 sm:py-2 ${isSelected ? 'border-ink bg-ink text-parchment' : hasEntries ? 'border-sage/60 bg-sage/15 text-olive' : 'border-taupe bg-cream text-oliveGray'}`}
             >
               {day.label}
@@ -359,25 +397,6 @@ export function MealPlanPage() {
         {loading && <EmptyState title="Loading the plan" description="Collecting meal entries for the next two weeks." />}
         {!loading && error && <EmptyState title="Meal plan unavailable" description={error} />}
         {!loading && !error && visibleDays.length === 0 && <EmptyState title="Nothing planned yet" description="Tap a day in the header strip, then use the + button to add your first meal." />}
-
-        {!loading && !error && (
-          <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 lg:grid-cols-7">
-            {calendarDays.map((day) => (
-              <button
-                key={`quick-add-${day.key}`}
-                type="button"
-                onClick={() => openCreateDialog(day.key, 'dinner')}
-                className="rounded-[1rem] border border-taupe/70 bg-parchment px-3 py-3 text-left shadow-paper transition-colors hover:bg-cream"
-              >
-                <p className="text-[0.64rem] font-semibold uppercase tracking-[0.2em] text-oliveGray">{day.label}</p>
-                <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-oat px-2.5 py-1 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-ink">
-                  <Plus className="h-3 w-3" />
-                  Add
-                </p>
-              </button>
-            ))}
-          </section>
-        )}
 
         {!loading && !error && (
           <div className="space-y-4">
