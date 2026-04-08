@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="grain-bg flex-1 overflow-y-auto px-5 pb-6 pt-4 sm:px-7 sm:pb-8">{children}</main>
+        <main id="app-scroll-root" className="grain-bg flex-1 overflow-y-auto px-5 pb-6 pt-4 sm:px-7 sm:pb-8">{children}</main>
 
         <BottomNav />
       </div>

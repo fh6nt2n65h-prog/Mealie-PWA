@@ -9,20 +9,30 @@ export function buildApiBaseUrl(baseUrl: string) {
   return `${normalizeBaseUrl(baseUrl)}/api`
 }
 
-export function getRecipeImageUrl(baseUrl: string, recipe: Recipe | RecipeSummary) {
-  if (typeof recipe.image === 'string' && recipe.image.length > 0) {
-    if (recipe.image.startsWith('http')) {
-      return recipe.image
-    }
+function getRecipeImageVersion(recipe: Recipe | RecipeSummary) {
+  return typeof recipe.image === 'string' ? recipe.image : ''
+}
 
-    return `${normalizeBaseUrl(baseUrl)}${recipe.image.startsWith('/') ? recipe.image : `/${recipe.image}`}`
+export function getRecipeImageUrl(baseUrl: string, recipe: Recipe | RecipeSummary, size: 'original' | 'small' = 'original') {
+  if (typeof recipe.image === 'string' && recipe.image.startsWith('http')) {
+    return recipe.image
   }
 
   if (!recipe.id) {
     return null
   }
 
-  return `${buildApiBaseUrl(baseUrl)}/media/recipes/${recipe.id}/images/original.webp`
+  const version = getRecipeImageVersion(recipe)
+  const fileName = size === 'small' ? 'min-original.webp' : 'original.webp'
+  const params = new URLSearchParams()
+
+  if (version) {
+    params.set('version', version)
+  }
+
+  const suffix = params.toString() ? `?${params.toString()}` : ''
+
+  return `${buildApiBaseUrl(baseUrl)}/media/recipes/${recipe.id}/images/${fileName}${suffix}`
 }
 
 export function formatDuration(value?: string | null) {

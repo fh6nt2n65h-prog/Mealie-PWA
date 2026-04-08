@@ -8,7 +8,7 @@ type RecipeListRowProps = {
 }
 
 export function RecipeListRow({ recipe, baseUrl, onClick }: RecipeListRowProps) {
-  const image = getRecipeImageUrl(baseUrl, recipe)
+  const image = getRecipeImageUrl(baseUrl, recipe, 'small')
 
   return (
     <button

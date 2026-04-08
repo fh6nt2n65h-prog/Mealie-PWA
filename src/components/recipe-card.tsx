@@ -10,15 +10,15 @@ type RecipeCardProps = {
 }
 
 export function RecipeCard({ recipe, baseUrl, onClick, compact = false }: RecipeCardProps) {
-  const image = getRecipeImageUrl(baseUrl, recipe)
+  const image = getRecipeImageUrl(baseUrl, recipe, 'small')
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={clsx(
-        'overflow-hidden rounded-card border border-taupe/75 bg-parchment text-left shadow-paper transition-transform duration-200 hover:-translate-y-1',
-        compact ? 'grid grid-cols-[1fr_auto] gap-5 p-4' : 'block'
+        'h-full overflow-hidden rounded-card border border-taupe/75 bg-parchment text-left shadow-paper transition-transform duration-200 hover:-translate-y-1',
+        compact ? 'grid grid-cols-[1fr_auto] gap-5 p-4' : 'flex flex-col'
       )}
     >
       {!compact && (
@@ -31,15 +31,15 @@ export function RecipeCard({ recipe, baseUrl, onClick, compact = false }: Recipe
         </div>
       )}
 
-      <div className={clsx('space-y-3', compact ? 'py-1' : 'px-5 pb-5 pt-2')}>
+      <div className={clsx('space-y-3', compact ? 'py-1' : 'flex flex-1 flex-col px-5 pb-5 pt-2')}>
         <div className="space-y-2">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{formatDuration(recipe.totalTime)}</p>
-          <h3 className="font-display text-2xl leading-tight tracking-[-0.03em] text-ink">{recipe.name || 'Untitled recipe'}</h3>
+          <h3 className="line-clamp-2 min-h-[3.9rem] font-display text-2xl leading-tight tracking-[-0.03em] text-ink">{recipe.name || 'Untitled recipe'}</h3>
         </div>
 
-        <p className="line-clamp-2 text-sm leading-6 text-oliveGray">{recipe.description || 'A quiet favorite waiting to be cooked again.'}</p>
+        <p className="line-clamp-3 min-h-[4.75rem] text-sm leading-6 text-oliveGray">{recipe.description || 'A quiet favorite waiting to be cooked again.'}</p>
 
-        <div className="flex flex-wrap gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-oliveGray">
+        <div className="mt-auto flex min-h-[2.25rem] flex-wrap gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-oliveGray">
           {recipe.recipeCategory?.slice(0, 2).map((category) => (
             <span key={category.slug} className="rounded-full bg-oat px-3 py-1">
               {category.name}

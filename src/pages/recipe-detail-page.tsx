@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ExternalLink, Minus, Plus, Sparkles } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { ExternalLink, Minus, Plus, Sparkles, Trash2 } from 'lucide-react'
 import type { Recipe } from '@/types/mealie'
 import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
+import { removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
 
@@ -17,12 +18,14 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
 
 export function RecipeDetailPage() {
   const { slug } = useParams()
+  const navigate = useNavigate()
   const { settings } = useSettings()
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [scale, setScale] = useState(1)
   const [cookMode, setCookMode] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -42,6 +45,7 @@ export function RecipeDetailPage() {
 
         if (!cancelled) {
           setRecipe(detail)
+          upsertRecipeCacheEntry(settings, detail)
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -70,6 +74,31 @@ export function RecipeDetailPage() {
   }
 
   const image = getRecipeImageUrl(settings.baseUrl, recipe)
+
+  async function handleDeleteRecipe() {
+    if (!recipe || deleting) {
+      return
+    }
+
+    const confirmed = window.confirm(`Delete ${recipe.name || 'this recipe'} from Mealie?`)
+
+    if (!confirmed) {
+      return
+    }
+
+    setDeleting(true)
+    setError('')
+
+    try {
+      const api = new MealieApi(settings)
+      await api.deleteRecipe(recipe.slug)
+      removeRecipeCacheEntry(settings, recipe.slug)
+      navigate('/recipes', { replace: true })
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete this recipe.')
+      setDeleting(false)
+    }
+  }
 
   return (
     <div className={`space-y-5 animate-rise ${cookMode ? 'pb-20' : ''}`}>
@@ -126,7 +155,17 @@ export function RecipeDetailPage() {
                 Source
               </a>
             )}
+            <button
+              type="button"
+              onClick={handleDeleteRecipe}
+              className="inline-flex items-center gap-2 rounded-full border border-terracotta/30 bg-terracotta/10 px-4 py-3 text-sm font-semibold text-terracotta"
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleting ? 'Deleting…' : 'Delete Recipe'}
+            </button>
           </div>
+
+          {error && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{error}</p>}
         </div>
       </section>
 

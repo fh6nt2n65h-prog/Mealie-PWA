@@ -62,6 +62,9 @@ export type RecipeStep = {
 
 export type RecipeSummary = {
   id?: string | null
+  userId?: string | null
+  groupId?: string | null
+  householdId?: string | null
   name?: string | null
   slug: string
   description?: string | null
@@ -84,16 +87,37 @@ export type Recipe = RecipeSummary & {
   orgURL?: string | null
 }
 
+export type CreateRecipeInput = {
+  name: string
+}
+
 export type PlanEntryType = 'breakfast' | 'lunch' | 'dinner' | 'side' | 'snack' | 'drink' | 'dessert'
 
 export type MealPlanEntry = {
   id: number
   date: string
   entryType: PlanEntryType
+  groupId: string
+  userId: string
+  householdId?: string
   title?: string
   text?: string
   recipeId?: string | null
   recipe?: RecipeSummary | null
+}
+
+export type CreateMealPlanEntryInput = {
+  date: string
+  entryType: PlanEntryType
+  title?: string
+  text?: string
+  recipeId?: string | null
+}
+
+export type UpdateMealPlanEntryInput = CreateMealPlanEntryInput & {
+  id: number
+  groupId: string
+  userId: string
 }
 
 export type MultiPurposeLabel = {

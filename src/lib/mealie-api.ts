@@ -1,6 +1,8 @@
 import type {
   ApiErrorPayload,
   ApiSettings,
+  CreateMealPlanEntryInput,
+  CreateRecipeInput,
   MealPlanEntry,
   Pagination,
   Recipe,
@@ -8,6 +10,7 @@ import type {
   ShoppingList,
   ShoppingListItem,
   ShoppingListSummary,
+  UpdateMealPlanEntryInput,
   UserProfile
 } from '@/types/mealie'
 import { buildApiBaseUrl } from '@/lib/utils'
@@ -114,6 +117,19 @@ export class MealieApi {
     return this.request<Recipe>(`/recipes/${encodeURIComponent(slug)}`)
   }
 
+  async createRecipe(payload: CreateRecipeInput) {
+    return this.request<string>('/recipes', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  }
+
+  async deleteRecipe(slug: string) {
+    return this.request<Recipe>(`/recipes/${encodeURIComponent(slug)}`, {
+      method: 'DELETE'
+    })
+  }
+
   async getMealPlan(startDate: string, endDate: string) {
     const params = new URLSearchParams({
       start_date: startDate,
@@ -122,6 +138,26 @@ export class MealieApi {
     })
 
     return this.request<Pagination<MealPlanEntry>>(`/households/mealplans?${params.toString()}`)
+  }
+
+  async createMealPlanEntry(payload: CreateMealPlanEntryInput) {
+    return this.request<MealPlanEntry>('/households/mealplans', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  }
+
+  async updateMealPlanEntry(itemId: number, payload: UpdateMealPlanEntryInput) {
+    return this.request<MealPlanEntry>(`/households/mealplans/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    })
+  }
+
+  async deleteMealPlanEntry(itemId: number) {
+    return this.request<MealPlanEntry>(`/households/mealplans/${itemId}`, {
+      method: 'DELETE'
+    })
   }
 
   async getShoppingLists() {
