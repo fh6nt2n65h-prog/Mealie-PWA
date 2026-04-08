@@ -3,9 +3,18 @@ import type { ApiSettings, MealPlanDensity, ViewMode } from '@/types/mealie'
 const SETTINGS_KEY = 'mealie-journal.settings.v1'
 const VIEW_MODE_KEY = 'mealie-journal.view-mode.v1'
 const MEAL_PLAN_DENSITY_KEY = 'mealie-journal.meal-plan-density.v1'
+const LEGACY_DEFAULT_BASE_URL = 'http://192.168.1.91:9000'
+
+function getAppOrigin() {
+  if (typeof window !== 'undefined' && window.location.origin) {
+    return window.location.origin
+  }
+
+  return 'http://192.168.1.91:8088'
+}
 
 export const defaultSettings: ApiSettings = {
-  baseUrl: 'http://192.168.1.91:9000',
+  baseUrl: getAppOrigin(),
   apiToken: ''
 }
 
@@ -29,9 +38,10 @@ function readLocalStorage<T>(key: string, fallback: T): T {
 
 export function loadSettings(): ApiSettings {
   const stored = readLocalStorage<ApiSettings>(SETTINGS_KEY, defaultSettings)
+  const baseUrl = !stored.baseUrl || stored.baseUrl === LEGACY_DEFAULT_BASE_URL ? getAppOrigin() : stored.baseUrl
 
   return {
-    baseUrl: stored.baseUrl || defaultSettings.baseUrl,
+    baseUrl,
     apiToken: stored.apiToken || ''
   }
 }
