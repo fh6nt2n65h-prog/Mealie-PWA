@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useRef } from 'react'
 import type { Recipe } from '@/types/mealie'
 import { RecipeCard } from '@/components/recipe-card'
 
@@ -13,6 +14,13 @@ type SwipeRecipeDeckProps = {
 
 export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl, onSelect, onLongPress }: SwipeRecipeDeckProps) {
   const recipe = recipes[currentIndex]
+  const previousIndexRef = useRef(currentIndex)
+
+  const direction = currentIndex === previousIndexRef.current ? 0 : currentIndex > previousIndexRef.current ? 1 : -1
+
+  useEffect(() => {
+    previousIndexRef.current = currentIndex
+  }, [currentIndex])
 
   if (!recipe) {
     return null
@@ -27,12 +35,14 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
   }
 
   return (
-    <div className="min-h-[420px]">
-      <AnimatePresence mode="wait">
+    <div className="relative min-h-[420px] overflow-hidden">
+      <AnimatePresence initial={false} custom={direction}>
           <motion.div
             key={recipe.slug}
+            custom={direction}
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
+            className="absolute inset-0"
             onDragEnd={(_, info) => {
               if (info.offset.x < -80) {
                 goTo(currentIndex + 1)
@@ -42,10 +52,10 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
                 goTo(currentIndex - 1)
               }
             }}
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -18, scale: 0.98 }}
-            transition={{ duration: 0.24, ease: 'easeOut' }}
+            initial={(currentDirection) => ({ x: currentDirection === 0 ? 0 : currentDirection > 0 ? 56 : -56 })}
+            animate={{ x: 0 }}
+            exit={(currentDirection) => ({ x: currentDirection === 0 ? 0 : currentDirection > 0 ? -56 : 56 })}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
             <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} onLongPress={onLongPress ? () => onLongPress(recipe) : undefined} featured />
           </motion.div>

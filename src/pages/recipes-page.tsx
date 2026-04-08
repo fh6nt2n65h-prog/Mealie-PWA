@@ -79,6 +79,7 @@ export function RecipesPage() {
   const [actionBusy, setActionBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const requestIdRef = useRef(0)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
   const touchStartRef = useRef<number | null>(null)
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
@@ -190,6 +191,25 @@ export function RecipesPage() {
   useEffect(() => {
     setSwipeIndex(0)
   }, [searchValue, viewMode])
+
+  useEffect(() => {
+    if (!isSearchOpen) {
+      return
+    }
+
+    const focusSearchInput = () => {
+      searchInputRef.current?.focus()
+      searchInputRef.current?.select()
+    }
+
+    const animationFrame = requestAnimationFrame(focusSearchInput)
+    const timeoutId = window.setTimeout(focusSearchInput, 60)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+      window.clearTimeout(timeoutId)
+    }
+  }, [isSearchOpen])
 
   function getScrollRoot() {
     if (typeof document === 'undefined') {
@@ -366,41 +386,62 @@ export function RecipesPage() {
     }
   }
 
+  function openSearch() {
+    setIsSearchOpen(true)
+
+    searchInputRef.current?.focus()
+
+    requestAnimationFrame(() => {
+      searchInputRef.current?.focus()
+      searchInputRef.current?.select()
+    })
+
+    window.setTimeout(() => {
+      searchInputRef.current?.focus()
+    }, 120)
+  }
+
   useHeaderSlots({
     sideContent: settings.apiToken ? (
-      <div className="flex items-center gap-2">
-        {isSearchOpen ? (
-          <div className="flex items-center gap-1.5 rounded-full border border-taupe/70 bg-parchment pl-3 pr-1 py-1 shadow-insetPaper">
-            <Search className="h-4 w-4 shrink-0 text-oliveGray" />
-            <input
-              value={searchValue}
-              onChange={(event) => setSearchValue(event.target.value)}
-              placeholder="Search recipes"
-              autoFocus
-              className="w-[min(42vw,11rem)] bg-transparent text-sm text-ink outline-none placeholder:text-oliveGray"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setIsSearchOpen(false)
-                setSearchValue('')
-              }}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-oliveGray hover:text-ink"
-              aria-label="Close recipe search"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
+      <div className="flex min-w-0 items-center gap-2">
+        <div
+          className={`flex min-w-0 items-center overflow-hidden rounded-full border border-taupe/70 bg-parchment shadow-paper transition-[width,padding] duration-200 ease-out ${isSearchOpen ? 'w-[min(32vw,8rem)] max-w-[8rem] px-2 py-1 sm:w-[10.5rem] sm:max-w-[10.5rem]' : 'w-10 p-0'}`}
+        >
           <button
             type="button"
-            onClick={() => setIsSearchOpen(true)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe/70 bg-parchment text-oliveGray shadow-paper"
+            onClick={openSearch}
+            className={`inline-flex shrink-0 items-center justify-center rounded-full text-oliveGray ${isSearchOpen ? 'h-8 w-8 pointer-events-none' : 'h-10 w-10'}`}
             aria-label="Open recipe search"
           >
             <Search className="h-4 w-4" />
           </button>
-        )}
+          <input
+            ref={searchInputRef}
+            type="search"
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            onFocus={() => setIsSearchOpen(true)}
+            placeholder="Search recipes"
+            inputMode="search"
+            enterKeyHint="search"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            className={`min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-oliveGray transition-all duration-150 ${isSearchOpen ? 'ml-1 opacity-100' : 'w-0 opacity-0 pointer-events-none'}`}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setIsSearchOpen(false)
+              setSearchValue('')
+            }}
+            className={`inline-flex h-8 shrink-0 items-center justify-center rounded-full text-oliveGray transition-[width,opacity] duration-150 hover:text-ink ${isSearchOpen ? 'w-8 opacity-100' : 'w-0 opacity-0 pointer-events-none'}`}
+            aria-label="Close recipe search"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
         <button
           type="button"

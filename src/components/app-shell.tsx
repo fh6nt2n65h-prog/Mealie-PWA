@@ -1,7 +1,6 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import dayjs from 'dayjs'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { HeaderSlotsProvider, useHeaderSlotState } from '@/app/header-slots-context'
 import { BottomNav } from '@/components/bottom-nav'
@@ -31,13 +30,7 @@ function resolveTitle(pathname: string) {
 }
 
 function getTabIndex(pathname: string) {
-  for (let i = 0; i < TAB_ROUTES.length; i++) {
-    if (pathname === TAB_ROUTES[i] || pathname.startsWith(TAB_ROUTES[i] + '/')) {
-      return i
-    }
-  }
-
-  return -1
+  return TAB_ROUTES.indexOf(pathname)
 }
 
 function AppShellFrame({ children }: { children: ReactNode }) {
@@ -46,19 +39,8 @@ function AppShellFrame({ children }: { children: ReactNode }) {
   const slots = useHeaderSlotState()
 
   const tabIndex = getTabIndex(location.pathname)
-  const prevTabIndexRef = useRef(tabIndex)
   const swipeRef = useRef<{ x: number; y: number } | null>(null)
-
-  const isTabSwitch = tabIndex >= 0 && prevTabIndexRef.current >= 0 && tabIndex !== prevTabIndexRef.current
-  const direction = isTabSwitch ? (tabIndex > prevTabIndexRef.current ? 1 : -1) : 0
-
-  useEffect(() => {
-    if (tabIndex >= 0) {
-      prevTabIndexRef.current = tabIndex
-    }
-  }, [tabIndex])
-
-  const isTopLevelTab = tabIndex >= 0 && TAB_ROUTES[tabIndex] === location.pathname
+  const isTopLevelTab = tabIndex >= 0
 
   function handleEdgeTouchStart(event: React.TouchEvent) {
     if (!isTopLevelTab) {
@@ -107,8 +89,6 @@ function AppShellFrame({ children }: { children: ReactNode }) {
     }
   }
 
-  const animationKey = tabIndex >= 0 ? TAB_ROUTES[tabIndex] : location.pathname
-
   return (
     <div className="mx-auto flex h-[100dvh] max-w-[880px] flex-col overflow-hidden bg-halo bg-[length:100%_100%] px-3 pb-2 pt-3 sm:px-5 sm:pt-5">
       <div className="flex h-full flex-col overflow-hidden rounded-shell border border-taupe/70 bg-cream/95 shadow-paper ring-1 ring-white/70 backdrop-blur-sm">
@@ -118,7 +98,7 @@ function AppShellFrame({ children }: { children: ReactNode }) {
               <p className="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-oliveGray">{dayjs().format('dddd, MMMM D')}</p>
               <h1 className="mt-2 font-display text-[2.35rem] leading-none tracking-[-0.03em] text-ink sm:text-[3.25rem]">{resolveTitle(location.pathname)}</h1>
             </div>
-            {slots.sideContent && <div className="flex shrink-0 items-center gap-2 self-end">{slots.sideContent}</div>}
+            {slots.sideContent && <div className="flex min-w-0 items-center justify-end gap-2 self-end">{slots.sideContent}</div>}
           </div>
 
           {slots.bottomContent && <div className="mt-3">{slots.bottomContent}</div>}
@@ -126,18 +106,11 @@ function AppShellFrame({ children }: { children: ReactNode }) {
 
         <main
           id="app-scroll-root"
-          className="grain-bg flex-1 overflow-y-auto px-5 pb-6 pt-3 sm:px-7 sm:pb-8"
+          className="grain-bg relative flex-1 overflow-y-auto px-5 pb-6 pt-3 sm:px-7 sm:pb-8"
           onTouchStart={handleEdgeTouchStart}
           onTouchEnd={handleEdgeTouchEnd}
         >
-          <motion.div
-            key={animationKey}
-            initial={direction !== 0 ? { opacity: 0, x: direction * 30 } : false}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-          >
-            {children}
-          </motion.div>
+          {children}
         </main>
 
         <BottomNav />
