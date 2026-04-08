@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { flushSync } from 'react-dom'
 import dayjs from 'dayjs'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
@@ -426,18 +427,8 @@ export function RecipesPage() {
   }
 
   function openSearch() {
-    setIsSearchOpen(true)
-
+    flushSync(() => setIsSearchOpen(true))
     searchInputRef.current?.focus()
-
-    requestAnimationFrame(() => {
-      searchInputRef.current?.focus()
-      searchInputRef.current?.select()
-    })
-
-    window.setTimeout(() => {
-      searchInputRef.current?.focus()
-    }, 120)
   }
 
   useHeaderSlots({

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
@@ -12,7 +13,7 @@ type DialogSheetProps = {
 }
 
 export function DialogSheet({ open, title, description, onClose, children, footer }: DialogSheetProps) {
-  return (
+  return createPortal(
     <AnimatePresence initial={false}>
       {open && (
         <motion.div
@@ -53,6 +54,7 @@ export function DialogSheet({ open, title, description, onClose, children, foote
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   )
 }

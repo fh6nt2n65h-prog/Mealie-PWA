@@ -463,7 +463,7 @@ export function MealPlanPage() {
       <DialogSheet
         open={editorOpen}
         title={draft.id === null ? 'Add meal plan entry' : 'Edit meal plan entry'}
-        description="Create a recipe-backed meal slot or a quick freeform note for the day."
+        description={formatSectionDate(draft.date)}
         onClose={() => {
           if (!submitting) {
             setEditorOpen(false)
@@ -489,47 +489,25 @@ export function MealPlanPage() {
         }
       >
         <div className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2 md:col-span-2">
-              <span className="text-sm font-semibold text-ink">Date</span>
-              <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-                {calendarDays.map((day) => {
-                  const selected = draft.date === day.key
+          <label className="block space-y-2">
+            <span className="text-sm font-semibold text-ink">Meal type</span>
+            <div className="flex flex-wrap gap-2">
+              {MEAL_TYPES.map((mealType) => {
+                const selected = draft.entryType === mealType
 
-                  return (
-                    <button
-                      key={day.key}
-                      type="button"
-                      onClick={() => setDraft((current) => ({ ...current, date: day.key }))}
-                      className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.72rem] font-semibold transition-colors sm:px-4 sm:py-2 ${selected ? 'border-ink bg-ink text-parchment' : 'border-taupe bg-cream text-oliveGray'}`}
-                    >
-                      {day.label}
-                    </button>
-                  )
-                })}
-              </div>
+                return (
+                  <button
+                    key={mealType}
+                    type="button"
+                    onClick={() => setDraft((current) => ({ ...current, entryType: mealType }))}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold ${selected ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
+                  >
+                    {titleize(mealType)}
+                  </button>
+                )
+              })}
             </div>
-
-            <label className="block space-y-2">
-              <span className="text-sm font-semibold text-ink">Meal Type</span>
-              <div className="flex flex-wrap gap-2">
-                {MEAL_TYPES.map((mealType) => {
-                  const selected = draft.entryType === mealType
-
-                  return (
-                    <button
-                      key={mealType}
-                      type="button"
-                      onClick={() => setDraft((current) => ({ ...current, entryType: mealType }))}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold ${selected ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
-                    >
-                      {titleize(mealType)}
-                    </button>
-                  )
-                })}
-              </div>
-            </label>
-          </div>
+          </label>
 
           <div className="flex gap-3">
             <button
