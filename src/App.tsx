@@ -22,6 +22,8 @@ export default function App() {
   const direction = currentTabIndex >= 0 && previousTabIndex >= 0 && currentTabIndex !== previousTabIndex
     ? currentTabIndex > previousTabIndex ? 1 : -1
     : 0
+  const enterX = direction === 0 ? 0 : direction > 0 ? 34 : -34
+  const exitX = direction === 0 ? 0 : direction > 0 ? -34 : 34
 
   useEffect(() => {
     previousPathRef.current = location.pathname
@@ -34,9 +36,9 @@ export default function App() {
           key={location.pathname}
           className="h-full"
           custom={direction}
-          initial={(currentDirection) => ({ x: currentDirection === 0 ? 0 : currentDirection > 0 ? 34 : -34 })}
+          initial={{ x: enterX }}
           animate={{ x: 0 }}
-          exit={(currentDirection) => ({ x: currentDirection === 0 ? 0 : currentDirection > 0 ? -34 : 34 })}
+          exit={{ x: exitX }}
           transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
         >
           <Routes location={location}>

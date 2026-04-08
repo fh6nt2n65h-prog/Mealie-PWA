@@ -17,6 +17,8 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
   const previousIndexRef = useRef(currentIndex)
 
   const direction = currentIndex === previousIndexRef.current ? 0 : currentIndex > previousIndexRef.current ? 1 : -1
+  const enterX = direction === 0 ? 0 : direction > 0 ? 56 : -56
+  const exitX = direction === 0 ? 0 : direction > 0 ? -56 : 56
 
   useEffect(() => {
     previousIndexRef.current = currentIndex
@@ -52,9 +54,9 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
                 goTo(currentIndex - 1)
               }
             }}
-            initial={(currentDirection) => ({ x: currentDirection === 0 ? 0 : currentDirection > 0 ? 56 : -56 })}
+            initial={{ x: enterX }}
             animate={{ x: 0 }}
-            exit={(currentDirection) => ({ x: currentDirection === 0 ? 0 : currentDirection > 0 ? -56 : 56 })}
+            exit={{ x: exitX }}
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
             <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} onLongPress={onLongPress ? () => onLongPress(recipe) : undefined} featured />
