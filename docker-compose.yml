@@ -1,0 +1,11 @@
+services:
+  mealie-pwa-client:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mealie-pwa-client
+    restart: unless-stopped
+    environment:
+      MEALIE_UPSTREAM: http://192.168.1.91:9000
+    ports:
+      - "8088:80"

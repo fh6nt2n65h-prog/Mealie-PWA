@@ -1,0 +1,69 @@
+import type { ApiSettings, MealPlanDensity, ViewMode } from '@/types/mealie'
+
+const SETTINGS_KEY = 'mealie-journal.settings.v1'
+const VIEW_MODE_KEY = 'mealie-journal.view-mode.v1'
+const MEAL_PLAN_DENSITY_KEY = 'mealie-journal.meal-plan-density.v1'
+
+export const defaultSettings: ApiSettings = {
+  baseUrl: 'http://192.168.1.91:9000',
+  apiToken: ''
+}
+
+function readLocalStorage<T>(key: string, fallback: T): T {
+  if (typeof window === 'undefined') {
+    return fallback
+  }
+
+  const rawValue = window.localStorage.getItem(key)
+
+  if (!rawValue) {
+    return fallback
+  }
+
+  try {
+    return JSON.parse(rawValue) as T
+  } catch {
+    return fallback
+  }
+}
+
+export function loadSettings(): ApiSettings {
+  const stored = readLocalStorage<ApiSettings>(SETTINGS_KEY, defaultSettings)
+
+  return {
+    baseUrl: stored.baseUrl || defaultSettings.baseUrl,
+    apiToken: stored.apiToken || ''
+  }
+}
+
+export function saveSettings(settings: ApiSettings) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+}
+
+export function loadViewMode(): ViewMode {
+  return readLocalStorage<ViewMode>(VIEW_MODE_KEY, 'grid')
+}
+
+export function saveViewMode(viewMode: ViewMode) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(VIEW_MODE_KEY, JSON.stringify(viewMode))
+}
+
+export function loadMealPlanDensity(): MealPlanDensity {
+  return readLocalStorage<MealPlanDensity>(MEAL_PLAN_DENSITY_KEY, 'advanced')
+}
+
+export function saveMealPlanDensity(density: MealPlanDensity) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(MEAL_PLAN_DENSITY_KEY, JSON.stringify(density))
+}
