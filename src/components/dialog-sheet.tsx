@@ -31,25 +31,25 @@ export function DialogSheet({ open, title, description, onClose, children, foote
             exit={{ opacity: 0, y: 12, scale: 0.99 }}
             transition={{ duration: 0.18, ease: 'easeOut' }}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-b-taupe/60 px-5 py-5 sm:px-6">
+            <div className="flex items-start justify-between gap-4 border-b border-b-taupe/60 px-5 py-4 sm:px-6">
               <div>
-                <h2 className="font-display text-3xl tracking-[-0.03em] text-ink">{title}</h2>
-                {description && <p className="mt-2 text-sm leading-6 text-oliveGray">{description}</p>}
+                <h2 className="font-display text-2xl tracking-[-0.03em] text-ink">{title}</h2>
+                {description && <p className="mt-1.5 text-sm leading-6 text-oliveGray">{description}</p>}
               </div>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
                 aria-label="Close dialog"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="max-h-[calc(88dvh-10.5rem)] overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
 
-            {footer && <div className="border-t border-taupe/60 bg-cream/60 px-5 py-4 sm:px-6">{footer}</div>}
+            {footer && <div className="sticky bottom-0 border-t border-taupe/60 bg-cream/60 px-5 py-4 sm:px-6">{footer}</div>}
           </motion.div>
         </motion.div>
       )}

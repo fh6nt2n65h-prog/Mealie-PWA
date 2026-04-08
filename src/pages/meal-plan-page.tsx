@@ -144,7 +144,7 @@ export function MealPlanPage() {
     entriesByDate.set(entry.date, dayEntries)
   })
 
-  const visibleDays = calendarDays
+  const visibleDays = calendarDays.filter((day) => (entriesByDate.get(day.key) || []).length > 0)
 
   const filteredRecipeOptions = useMemo(() => {
     const normalizedQuery = recipeSearch.trim().toLowerCase()
@@ -358,12 +358,13 @@ export function MealPlanPage() {
 
         {loading && <EmptyState title="Loading the plan" description="Collecting meal entries for the next two weeks." />}
         {!loading && error && <EmptyState title="Meal plan unavailable" description={error} />}
-        {!loading && !error && visibleDays.length === 0 && <EmptyState title="Nothing planned yet" description="Start planning in Mealie and refresh this view." />}
+        {!loading && !error && visibleDays.length === 0 && <EmptyState title="Nothing planned yet" description="Tap a day in the header strip, then use the + button to add your first meal." />}
 
-        {!loading && !error && visibleDays.length > 0 && (
+        {!loading && !error && (
           <div className="space-y-4">
             {visibleDays.map((day) => {
               const dayEntries = entriesByDate.get(day.key) || []
+              const activeMealTypes = MEAL_TYPES.filter((mealType) => dayEntries.some((entry) => entry.entryType === mealType))
 
               return (
                 <section
@@ -378,63 +379,57 @@ export function MealPlanPage() {
                       <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{day.label}</p>
                       <h3 className="mt-1 font-display text-3xl tracking-[-0.03em] text-ink">{formatSectionDate(day.key)}</h3>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => openCreateDialog(day.key, 'dinner')}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
+                      aria-label="Add entry for this day"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
                   </div>
 
-                  <div className="space-y-4">
-                    {MEAL_TYPES.map((mealType) => {
+                  <div className="space-y-3">
+                    {activeMealTypes.map((mealType) => {
                       const mealEntries = dayEntries.filter((entry) => entry.entryType === mealType)
 
                       return (
-                        <article key={`${day.key}-${mealType}`} className="rounded-[1.4rem] bg-cream px-4 py-4 shadow-paper">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{titleize(mealType)}</p>
-                            <button
-                              type="button"
-                              onClick={() => openCreateDialog(day.key, mealType)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-taupe bg-parchment text-ink"
-                              aria-label={`Add ${mealType} entry`}
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
+                        <article key={`${day.key}-${mealType}`} className="rounded-[1.4rem] bg-cream px-4 py-3.5 shadow-paper">
+                          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{titleize(mealType)}</p>
 
-                          {mealEntries.length === 0 ? (
-                            <p className="mt-3 text-sm text-oliveGray">Empty</p>
-                          ) : (
-                            <ul className="mt-3 space-y-2">
-                              {mealEntries.map((entry) => (
-                                <li key={entry.id} className="rounded-[1rem] bg-parchment px-4 py-3">
-                                  <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                      <p className="font-display text-2xl tracking-[-0.03em] text-ink">{entry.recipe?.name || entry.title || 'Planned item'}</p>
-                                      {!entry.recipe && entry.text && <p className="mt-1 text-sm leading-6 text-oliveGray">{entry.text}</p>}
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => openEditDialog(entry)}
-                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
-                                        aria-label="Edit meal plan entry"
-                                      >
-                                        <Pencil className="h-3.5 w-3.5" />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => void handleDeleteEntry(entry.id)}
-                                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta"
-                                        aria-label="Delete meal plan entry"
-                                      >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                      </button>
-                                    </div>
+                          <ul className="mt-2 space-y-2">
+                            {mealEntries.map((entry) => (
+                              <li key={entry.id} className="rounded-[1rem] bg-parchment px-4 py-3">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div>
+                                    <p className="font-display text-2xl tracking-[-0.03em] text-ink">{entry.recipe?.name || entry.title || 'Planned item'}</p>
+                                    {!entry.recipe && entry.text && <p className="mt-1 text-sm leading-6 text-oliveGray">{entry.text}</p>}
                                   </div>
 
-                                  {deletingId === entry.id && <p className="mt-3 text-sm text-oliveGray">Deleting…</p>}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditDialog(entry)}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
+                                      aria-label="Edit meal plan entry"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteEntry(entry.id)}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta"
+                                      aria-label="Delete meal plan entry"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {deletingId === entry.id && <p className="mt-3 text-sm text-oliveGray">Deleting…</p>}
+                              </li>
+                            ))}
+                          </ul>
                         </article>
                       )
                     })}
@@ -498,7 +493,7 @@ export function MealPlanPage() {
 
             <label className="block space-y-2">
               <span className="text-sm font-semibold text-ink">Meal Type</span>
-              <div className="flex flex-wrap gap-2 rounded-[1.25rem] border border-taupe bg-cream px-3 py-3">
+              <div className="flex flex-wrap gap-2">
                 {MEAL_TYPES.map((mealType) => {
                   const selected = draft.entryType === mealType
 
@@ -507,7 +502,7 @@ export function MealPlanPage() {
                       key={mealType}
                       type="button"
                       onClick={() => setDraft((current) => ({ ...current, entryType: mealType }))}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold ${selected ? 'bg-ink text-parchment' : 'bg-parchment text-ink'}`}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold ${selected ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
                     >
                       {titleize(mealType)}
                     </button>

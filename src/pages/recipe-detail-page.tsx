@@ -125,14 +125,14 @@ export function RecipeDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2.5">
-            <div className="inline-flex items-center gap-2 rounded-full border border-taupe bg-cream px-2 py-1.5 text-sm font-semibold text-ink">
-              <span className="px-2 text-xs uppercase tracking-[0.18em] text-oliveGray">Servings</span>
-              <button type="button" onClick={() => setScale((current) => Math.max(0.5, current - 0.5))} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-parchment text-ink">
-                <Minus className="h-3.5 w-3.5" />
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-taupe bg-cream px-1.5 py-1 text-xs font-semibold text-ink">
+              <span className="px-1.5 text-[0.65rem] uppercase tracking-[0.16em] text-oliveGray">Servings</span>
+              <button type="button" onClick={() => setScale((current) => Math.max(0.5, current - 0.5))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
+                <Minus className="h-3 w-3" />
               </button>
-              <span className="min-w-[2.5rem] text-center">{scale}x</span>
-              <button type="button" onClick={() => setScale((current) => Math.min(4, current + 0.5))} className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-parchment text-ink">
-                <Plus className="h-3.5 w-3.5" />
+              <span className="min-w-[2rem] text-center text-xs">{scale}x</span>
+              <button type="button" onClick={() => setScale((current) => Math.min(4, current + 0.5))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
+                <Plus className="h-3 w-3" />
               </button>
             </div>
             <button

@@ -28,7 +28,7 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
 
   return (
     <div className="min-h-[420px]">
-      <AnimatePresence initial={false} mode="wait">
+      <AnimatePresence mode="wait">
           <motion.div
             key={recipe.slug}
             drag="x"
@@ -45,7 +45,7 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -18, scale: 0.98 }}
-            transition={{ duration: 0.21, ease: 'easeOut' }}
+            transition={{ duration: 0.24, ease: 'easeOut' }}
           >
             <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} onLongPress={onLongPress ? () => onLongPress(recipe) : undefined} featured />
           </motion.div>

@@ -8,7 +8,6 @@ import { useSettings } from '@/app/settings-context'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
 import { RecipeCard } from '@/components/recipe-card'
-import { SearchField } from '@/components/search-field'
 import { SwipeRecipeDeck } from '@/components/swipe-recipe-deck'
 import { useStoredState } from '@/hooks/use-stored-state'
 import { getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
@@ -370,33 +369,38 @@ export function RecipesPage() {
   useHeaderSlots({
     sideContent: settings.apiToken ? (
       <div className="flex items-center gap-2">
-        <div className={`overflow-hidden transition-all duration-200 ease-out ${isSearchOpen ? 'w-[min(58vw,15rem)]' : 'w-10'}`}>
-          {isSearchOpen ? (
-            <div className="flex items-center gap-2">
-              <SearchField value={searchValue} onChange={setSearchValue} placeholder="Search recipes" className="min-w-0 flex-1 px-3 py-2 text-sm" />
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSearchOpen(false)
-                  setSearchValue('')
-                }}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe/70 bg-parchment text-oliveGray shadow-paper"
-                aria-label="Close recipe search"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : (
+        {isSearchOpen ? (
+          <div className="flex items-center gap-1.5 rounded-full border border-taupe/70 bg-parchment pl-3 pr-1 py-1 shadow-insetPaper">
+            <Search className="h-4 w-4 shrink-0 text-oliveGray" />
+            <input
+              value={searchValue}
+              onChange={(event) => setSearchValue(event.target.value)}
+              placeholder="Search recipes"
+              autoFocus
+              className="w-[min(42vw,11rem)] bg-transparent text-sm text-ink outline-none placeholder:text-oliveGray"
+            />
             <button
               type="button"
-              onClick={() => setIsSearchOpen(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe/70 bg-parchment text-oliveGray shadow-paper"
-              aria-label="Open recipe search"
+              onClick={() => {
+                setIsSearchOpen(false)
+                setSearchValue('')
+              }}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-oliveGray hover:text-ink"
+              aria-label="Close recipe search"
             >
-              <Search className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </button>
-          )}
-        </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe/70 bg-parchment text-oliveGray shadow-paper"
+            aria-label="Open recipe search"
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        )}
 
         <button
           type="button"
@@ -515,20 +519,20 @@ export function RecipesPage() {
             <button
               type="button"
               onClick={() => setCreateMode('url')}
-              className="rounded-[1.4rem] border border-taupe bg-cream px-5 py-5 text-left shadow-paper"
+              className="rounded-[1.2rem] border border-taupe bg-cream px-4 py-3.5 text-left shadow-paper"
             >
-              <LinkIcon className="h-6 w-6 text-terracotta" />
-              <p className="mt-4 font-display text-2xl tracking-[-0.03em] text-ink">Add via URL</p>
-              <p className="mt-2 text-sm leading-6 text-oliveGray">Paste a recipe URL and let Mealie scrape it with the URL import endpoint.</p>
+              <LinkIcon className="h-5 w-5 text-terracotta" />
+              <p className="mt-2 font-display text-xl tracking-[-0.03em] text-ink">Add via URL</p>
+              <p className="mt-1 text-xs leading-5 text-oliveGray">Paste a link and let Mealie scrape it.</p>
             </button>
             <button
               type="button"
               onClick={() => setCreateMode('image')}
-              className="rounded-[1.4rem] border border-taupe bg-cream px-5 py-5 text-left shadow-paper"
+              className="rounded-[1.2rem] border border-taupe bg-cream px-4 py-3.5 text-left shadow-paper"
             >
-              <ImagePlus className="h-6 w-6 text-terracotta" />
-              <p className="mt-4 font-display text-2xl tracking-[-0.03em] text-ink">Add via image</p>
-              <p className="mt-2 text-sm leading-6 text-oliveGray">Upload or capture an image and use Mealie’s image creation endpoint.</p>
+              <ImagePlus className="h-5 w-5 text-terracotta" />
+              <p className="mt-2 font-display text-xl tracking-[-0.03em] text-ink">Add via image</p>
+              <p className="mt-1 text-xs leading-5 text-oliveGray">Upload or capture a recipe photo.</p>
             </button>
           </div>
         )}
