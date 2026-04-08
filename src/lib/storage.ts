@@ -72,7 +72,7 @@ export function loadMealPlanDensity(): MealPlanDensity {
   return 'compact'
 }
 
-export function saveMealPlanDensity(density: MealPlanDensity) {
+export function saveMealPlanDensity(_density: MealPlanDensity) {
   if (typeof window === 'undefined') {
     return
   }

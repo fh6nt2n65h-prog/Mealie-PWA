@@ -183,14 +183,14 @@ export function RecipesPage() {
     }
   }, [settings.apiToken, settings.baseUrl])
 
+  const viewMode = storedViewMode === 'grid' ? 'grid' : 'swipe'
+  const filteredRecipes = recipes.filter((recipe) => matchesRecipeQuery(recipe, searchValue))
+  const currentSwipeIndex = clamp(swipeIndex, 0, Math.max(filteredRecipes.length - 1, 0))
+  const mealPlanDays = useMemo(() => MEAL_PLAN_DAYS, [])
+
   useEffect(() => {
     setSwipeIndex(0)
   }, [searchValue, viewMode])
-
-  const filteredRecipes = recipes.filter((recipe) => matchesRecipeQuery(recipe, searchValue))
-  const currentSwipeIndex = clamp(swipeIndex, 0, Math.max(filteredRecipes.length - 1, 0))
-  const viewMode = storedViewMode === 'grid' ? 'grid' : 'swipe'
-  const mealPlanDays = useMemo(() => MEAL_PLAN_DAYS, [])
 
   function getScrollRoot() {
     if (typeof document === 'undefined') {
