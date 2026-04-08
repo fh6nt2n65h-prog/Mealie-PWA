@@ -45,7 +45,7 @@ export function RecipesPage() {
   const [error, setError] = useState('')
   const [scanningIngredients, setScanningIngredients] = useState(false)
   const [searchValue, setSearchValue] = useState('')
-  const [viewMode, setViewMode] = useStoredState<ViewMode>(loadViewMode, saveViewMode)
+  const [viewMode] = useStoredState<ViewMode>(loadViewMode, saveViewMode)
   const [swipeIndex, setSwipeIndex] = useState(0)
 
   useEffect(() => {

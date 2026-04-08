@@ -33,10 +33,10 @@ export function MealPlanPage() {
   const [entries, setEntries] = useState<MealPlanEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [density, setDensity] = useStoredState<MealPlanDensity>(loadMealPlanDensity, saveMealPlanDensity)
+  const [density] = useStoredState<MealPlanDensity>(loadMealPlanDensity, saveMealPlanDensity)
   const [selectedDayKey, setSelectedDayKey] = useState(CALENDAR_DAYS[0]?.key || dayjs().format('YYYY-MM-DD'))
   const scrollContainerRef = useRef<HTMLDivElement | null>(null)
-  const daySectionsRef = useRef<Record<string, HTMLDivElement | null>>({})
+  const daySectionsRef = useRef<Record<string, HTMLElement | null>>({})
   const calendarDays = CALENDAR_DAYS
 
   useEffect(() => {
