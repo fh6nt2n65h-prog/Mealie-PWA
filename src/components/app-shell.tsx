@@ -29,8 +29,8 @@ function AppShellFrame({ children }: { children: ReactNode }) {
   const slots = useHeaderSlotState()
 
   return (
-    <div className="mx-auto flex h-[100dvh] max-w-[880px] flex-col overflow-hidden bg-halo bg-[length:100%_100%] px-3 pb-2 pt-3 sm:px-5 sm:pt-5">
-      <div className="app-shell-frame flex h-full flex-col overflow-hidden rounded-shell border border-taupe/70 bg-cream/95 shadow-paper ring-1 ring-white/70">
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-halo bg-[length:100%_100%]">
+      <div className="app-shell-frame flex h-full flex-col overflow-hidden bg-cream/95">
         <header className="safe-top border-b border-b-taupe/70 bg-wash px-5 pb-3 pt-4 sm:px-7 sm:pb-4 sm:pt-5">
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1 max-w-[32rem] animate-rise">
