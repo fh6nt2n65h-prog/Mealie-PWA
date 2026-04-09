@@ -279,6 +279,10 @@ export function RecipeDetailPage() {
   }
 
   function openEditDialog() {
+    if (!recipe) {
+      return
+    }
+
     setEditDraft(recipeToEditDraft(recipe))
     setEditError('')
     setConvertStatus(null)
@@ -391,9 +395,9 @@ export function RecipeDetailPage() {
     }
   }
 
-  const draftHasImperial = editOpen && hasImperialIngredients(
+  const draftHasImperial = Boolean(recipe) && editOpen && hasImperialIngredients(
     editDraft.ingredients.map((d, idx) => ({
-      ...recipe.recipeIngredient[idx],
+      ...recipe!.recipeIngredient[idx],
       unit: d.unit ? { name: d.unit, abbreviation: d.unit } : null,
     }))
   )
