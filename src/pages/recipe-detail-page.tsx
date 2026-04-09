@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ListPlus, Minus, Plus, Sparkles, Trash2 } from 'lucide-react'
 import type { Recipe } from '@/types/mealie'
 import { useSettings } from '@/app/settings-context'
@@ -70,21 +71,23 @@ export function RecipeDetailPage() {
   }, [settings, slug])
 
   useEffect(() => {
+    const scrollRoot = document.getElementById('app-scroll-root')
     const el = buttonsRowRef.current
 
-    if (!el) {
+    if (!scrollRoot || !el) {
       return
     }
 
-    const root = document.getElementById('app-scroll-root')
-    const observer = new IntersectionObserver(
-      ([entry]) => setButtonsInView(entry?.isIntersecting ?? true),
-      { root, threshold: 0 }
-    )
+    function check() {
+      const elBottom = el!.getBoundingClientRect().bottom
+      const rootTop = scrollRoot!.getBoundingClientRect().top
+      setButtonsInView(elBottom > rootTop)
+    }
 
-    observer.observe(el)
+    check()
+    scrollRoot.addEventListener('scroll', check, { passive: true })
 
-    return () => observer.disconnect()
+    return () => scrollRoot.removeEventListener('scroll', check)
   }, [recipe])
 
   if (loading) {
@@ -107,15 +110,14 @@ export function RecipeDetailPage() {
     try {
       const api = new MealieApi(settings)
       const lists = await api.getShoppingLists()
-      const list = lists.items[0]
+      let listId = lists.items[0]?.id
 
-      if (!list) {
-        setListAddStatus('error')
-        window.setTimeout(() => setListAddStatus('idle'), 2000)
-        return
+      if (!listId) {
+        const created = await api.createShoppingList('Shopping List')
+        listId = created.id
       }
 
-      await api.addRecipeToShoppingList(list.id, recipe.id)
+      await api.addRecipeToShoppingList(listId, recipe.id)
       setListAddStatus('done')
       window.setTimeout(() => setListAddStatus('idle'), 1800)
     } catch {
@@ -151,17 +153,28 @@ export function RecipeDetailPage() {
 
   return (
     <div className={`space-y-5 animate-rise ${cookMode ? 'pb-6' : ''}`}>
-      {/* Sticky cook-mode shortcut — visible only when the buttons row has scrolled above the fold */}
-      <div className={`sticky top-2 z-20 h-0 overflow-visible transition-opacity duration-150 ${buttonsInView ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
-        <div className={`flex ${cookMode ? 'justify-start' : 'justify-end'}`}>
-          <button
-            type="button"
-            onClick={() => setCookMode((c) => !c)}
-            className={`inline-flex h-9 w-9 items-center justify-center rounded-full shadow-paper ${cookMode ? 'bg-cream text-ink border border-taupe' : 'bg-ink text-parchment'}`}
-            aria-label={cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
-          >
-            <Sparkles className="h-4 w-4" />
-          </button>
+      {/* Sticky cook-mode shortcut — animates in when the buttons row scrolls out of view */}
+      <div className="pointer-events-none sticky top-2 z-20 h-0 overflow-visible">
+        <div className="flex justify-end">
+          <AnimatePresence initial={false}>
+            {!buttonsInView && (
+              <motion.button
+                key="sticky-cook"
+                type="button"
+                onClick={() => setCookMode((c) => !c)}
+                initial={{ opacity: 0, scale: 1.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.5 }}
+                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className={`pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full shadow-paper ${
+                  cookMode ? 'border border-taupe bg-cream text-ink' : 'bg-ink text-parchment'
+                }`}
+                aria-label={cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
+              >
+                <Sparkles className="h-4 w-4" />
+              </motion.button>
+            )}
+          </AnimatePresence>
         </div>
       </div>
       <Link to="/recipes" className="inline-flex items-center gap-2 text-sm font-semibold text-oliveGray">

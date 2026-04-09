@@ -211,6 +211,13 @@ export class MealieApi {
     })
   }
 
+  async createShoppingList(name: string) {
+    return this.request<{ id: string; name: string }>('/households/shopping/lists', {
+      method: 'POST',
+      body: JSON.stringify({ name })
+    })
+  }
+
   async addRecipeToShoppingList(listId: string, recipeId: string) {
     return this.request(`/households/shopping/lists/${listId}/recipe/${recipeId}`, {
       method: 'POST'
