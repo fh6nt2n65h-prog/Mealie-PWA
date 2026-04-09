@@ -322,6 +322,8 @@ export function RecipeDetailPage() {
   }
 
   function handleConvertDraftToMetric() {
+    if (!recipe) return
+
     const asIngredients: RecipeIngredient[] = editDraft.ingredients.map((draft, idx) => {
       const original = recipe.recipeIngredient[idx]
       const qty = parseFloat(draft.quantity)
