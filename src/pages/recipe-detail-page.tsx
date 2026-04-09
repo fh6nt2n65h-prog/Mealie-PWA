@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { Minus, Plus, Sparkles, Trash2 } from 'lucide-react'
+import { ListPlus, Minus, Plus, Sparkles, Trash2 } from 'lucide-react'
 import type { Recipe } from '@/types/mealie'
 import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
@@ -26,6 +26,9 @@ export function RecipeDetailPage() {
   const [servings, setServings] = useState(1)
   const [cookMode, setCookMode] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [buttonsInView, setButtonsInView] = useState(true)
+  const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'done' | 'error'>('idle')
+  const buttonsRowRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -66,6 +69,24 @@ export function RecipeDetailPage() {
     }
   }, [settings, slug])
 
+  useEffect(() => {
+    const el = buttonsRowRef.current
+
+    if (!el) {
+      return
+    }
+
+    const root = document.getElementById('app-scroll-root')
+    const observer = new IntersectionObserver(
+      ([entry]) => setButtonsInView(entry?.isIntersecting ?? true),
+      { root, threshold: 0 }
+    )
+
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [recipe])
+
   if (loading) {
     return <EmptyState title="Loading recipe" description="Gathering ingredients, method, and imagery from Mealie." />
   }
@@ -75,6 +96,33 @@ export function RecipeDetailPage() {
   }
 
   const image = getRecipeImageUrl(settings.baseUrl, recipe)
+
+  async function handleAddToShoppingList() {
+    if (!recipe?.id || listAddStatus === 'adding') {
+      return
+    }
+
+    setListAddStatus('adding')
+
+    try {
+      const api = new MealieApi(settings)
+      const lists = await api.getShoppingLists()
+      const list = lists.items[0]
+
+      if (!list) {
+        setListAddStatus('error')
+        window.setTimeout(() => setListAddStatus('idle'), 2000)
+        return
+      }
+
+      await api.addRecipeToShoppingList(list.id, recipe.id)
+      setListAddStatus('done')
+      window.setTimeout(() => setListAddStatus('idle'), 1800)
+    } catch {
+      setListAddStatus('error')
+      window.setTimeout(() => setListAddStatus('idle'), 2000)
+    }
+  }
 
   async function handleDeleteRecipe() {
     if (!recipe || deleting) {
@@ -102,7 +150,20 @@ export function RecipeDetailPage() {
   }
 
   return (
-    <div className={`space-y-5 animate-rise ${cookMode ? 'pb-20' : ''}`}>
+    <div className={`space-y-5 animate-rise ${cookMode ? 'pb-6' : ''}`}>
+      {/* Sticky cook-mode shortcut — visible only when the buttons row has scrolled above the fold */}
+      <div className={`sticky top-2 z-20 h-0 overflow-visible transition-opacity duration-150 ${buttonsInView ? 'pointer-events-none opacity-0' : 'opacity-100'}`}>
+        <div className={`flex ${cookMode ? 'justify-start' : 'justify-end'}`}>
+          <button
+            type="button"
+            onClick={() => setCookMode((c) => !c)}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-full shadow-paper ${cookMode ? 'bg-cream text-ink border border-taupe' : 'bg-ink text-parchment'}`}
+            aria-label={cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
+          >
+            <Sparkles className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
       <Link to="/recipes" className="inline-flex items-center gap-2 text-sm font-semibold text-oliveGray">
         Back to recipes
       </Link>
@@ -125,7 +186,7 @@ export function RecipeDetailPage() {
             <p className="max-w-2xl text-sm leading-7 text-oliveGray">{recipe.description || 'A recipe collected into your private cooking journal.'}</p>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
+          <div ref={buttonsRowRef} className="flex flex-wrap gap-2.5">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-taupe bg-cream px-1.5 py-1 text-xs font-semibold text-ink">
               <span className="px-1.5 text-[0.65rem] uppercase tracking-[0.16em] text-oliveGray">Servings</span>
               <button type="button" onClick={() => setServings((s) => Math.max(1, s - 1))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
@@ -161,7 +222,24 @@ export function RecipeDetailPage() {
 
       <section className="grid gap-5 xl:grid-cols-[minmax(280px,360px)_1fr]">
         <article className="rounded-card border border-taupe/70 bg-oat/65 px-5 py-6 shadow-paper sm:px-6">
-          <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Ingredients</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Ingredients</h3>
+            {!cookMode && (
+              <button
+                type="button"
+                onClick={() => void handleAddToShoppingList()}
+                disabled={listAddStatus === 'adding'}
+                className="inline-flex items-center gap-1 rounded-full bg-sage/20 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-olive transition-opacity disabled:opacity-60"
+                aria-label="Add all ingredients to shopping list"
+              >
+                {listAddStatus === 'done' && 'Added!'}
+                {listAddStatus === 'error' && 'No list'}
+                {(listAddStatus === 'idle' || listAddStatus === 'adding') && (
+                  <><ListPlus className="h-3.5 w-3.5" />{listAddStatus === 'adding' ? 'Adding…' : 'Add all'}</>
+                )}
+              </button>
+            )}
+          </div>
           <ul className="mt-4 space-y-3">
             {recipe.recipeIngredient.map((ingredient, index) => {
               const baseServings = recipe.recipeServings || 1
@@ -189,7 +267,7 @@ export function RecipeDetailPage() {
                 <span className="font-display text-4xl leading-none text-terracotta">{index + 1}</span>
                 <div>
                   {step.title && <h4 className="text-base font-semibold text-ink">{step.title}</h4>}
-                  <p className={`mt-1 text-oliveGray ${cookMode ? 'text-lg leading-8 text-ink' : 'text-sm leading-7'}`}>{step.text}</p>
+                  <p className={`mt-1 ${cookMode ? 'text-xl leading-9 text-ink' : 'text-sm leading-7 text-oliveGray'}`}>{step.text}</p>
                 </div>
               </li>
             ))}

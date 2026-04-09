@@ -210,4 +210,10 @@ export class MealieApi {
       })
     })
   }
+
+  async addRecipeToShoppingList(listId: string, recipeId: string) {
+    return this.request(`/households/shopping/lists/${listId}/recipe/${recipeId}`, {
+      method: 'POST'
+    })
+  }
 }
