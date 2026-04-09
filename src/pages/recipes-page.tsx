@@ -124,7 +124,6 @@ export function RecipesPage() {
     if (!settings.apiToken) {
       setRecipes([])
       setLoading(false)
-      setRefreshing(false)
       setError('')
       return
     }
@@ -132,9 +131,7 @@ export function RecipesPage() {
     const requestId = requestIdRef.current + 1
     requestIdRef.current = requestId
 
-    if (options?.background) {
-      setRefreshing(true)
-    } else {
+    if (!options?.background) {
       setLoading(true)
     }
 
@@ -164,7 +161,6 @@ export function RecipesPage() {
     } finally {
       if (requestIdRef.current === requestId) {
         setLoading(false)
-        setRefreshing(false)
       }
     }
   }
@@ -173,7 +169,6 @@ export function RecipesPage() {
     if (!settings.apiToken) {
       setRecipes([])
       setLoading(false)
-      setRefreshing(false)
       setError('')
       return
     }
@@ -219,14 +214,6 @@ export function RecipesPage() {
       window.clearTimeout(timeoutId)
     }
   }, [isSearchOpen])
-
-  function getScrollRoot() {
-    if (typeof document === 'undefined') {
-      return null
-    }
-
-    return document.getElementById('app-scroll-root')
-  }
 
   async function handleImportedRecipe(slug: string) {
     const api = new MealieApi(settings)
