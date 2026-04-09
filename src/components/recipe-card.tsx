@@ -19,6 +19,8 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, onToggleFavo
   const image = getRecipeImageUrl(baseUrl, recipe, 'small')
   const longPressTimerRef = useRef<number | null>(null)
   const suppressClickRef = useRef(false)
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
 
   function clearLongPressTimer() {
     if (longPressTimerRef.current !== null) {
@@ -67,7 +69,16 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, onToggleFavo
       }}
       onMouseUp={clearLongPressTimer}
       onMouseLeave={clearLongPressTimer}
-      onTouchStart={startLongPress}
+      onTouchStart={(e) => {
+        touchStartXRef.current = e.touches[0].clientX
+        touchStartYRef.current = e.touches[0].clientY
+        startLongPress()
+      }}
+      onTouchMove={(e) => {
+        const dx = e.touches[0].clientX - (touchStartXRef.current ?? e.touches[0].clientX)
+        const dy = e.touches[0].clientY - (touchStartYRef.current ?? e.touches[0].clientY)
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clearLongPressTimer()
+      }}
       onTouchEnd={clearLongPressTimer}
       onTouchCancel={clearLongPressTimer}
       className={clsx(

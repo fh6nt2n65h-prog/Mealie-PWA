@@ -439,12 +439,12 @@ export function RecipeDetailPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.5 }}
                 transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                className={`pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full shadow-paper ${
+                className={`pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-semibold shadow-paper ${
                   cookMode ? 'border border-taupe bg-cream text-ink' : 'bg-ink text-parchment'
                 }`}
-                aria-label={cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
               >
                 <CookingPot className="h-4 w-4" />
+                <span>{cookMode ? 'Exit Cook Mode' : 'Cook Mode'}</span>
               </motion.button>
             )}
           </AnimatePresence>

@@ -149,7 +149,8 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
       const { w, h } = tooltipSizeRef.current
       const centerX = triggerRect.left + triggerRect.width / 2
       const newLeft = Math.max(8, Math.min(centerX - w / 2, window.innerWidth - w - 8))
-      const newTop = triggerRect.top - h - 10
+      const idealTop = triggerRect.top - h - 10
+      const newTop = idealTop < scrollRect.top + 4 ? triggerRect.bottom + 8 : idealTop
 
       // Motion value set = GPU transform update, zero layout cost
       scrollDx.set(newLeft - initPos.left)
@@ -188,7 +189,11 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
 
     const rawLeft = tooltip.rawX - w / 2
     const clampedLeft = Math.max(8, Math.min(rawLeft, window.innerWidth - w - 8))
-    const top = tooltip.y - h - 10
+    const scrollElForClamp = document.getElementById('app-scroll-root')
+    const scrollRectForClamp = scrollElForClamp?.getBoundingClientRect()
+    const idealTop = tooltip.y - h - 10
+    const below = (triggerElRef.current?.getBoundingClientRect().bottom ?? tooltip.y + 20) + 8
+    const top = scrollRectForClamp && idealTop < scrollRectForClamp.top + 4 ? below : idealTop
 
     el.style.left = `${clampedLeft}px`
     el.style.top = `${top}px`
@@ -214,7 +219,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
     tooltipTimeoutRef.current = window.setTimeout(() => {
       setTooltip(null)
       tooltipTimeoutRef.current = null
-    }, 3000)
+    }, 2000)
   }
 
   return (
@@ -228,7 +233,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
             type="button"
             onClick={(event) => showTooltip(event.currentTarget, node.ingredient, node.id, node.duplicate)}
             onTouchStart={(event) => showTooltip(event.currentTarget, node.ingredient, node.id, node.duplicate)}
-            className={`inline-block align-baseline font-semibold text-terracotta transition-all duration-150 cursor-pointer ${tooltip?.id === node.id ? 'scale-[1.12] blur-[1.5px]' : ''}`}
+            className={`inline-block align-baseline font-semibold text-terracotta transition-all duration-150 cursor-pointer ${tooltip?.id === node.id ? 'scale-[1.12]' : ''}`}
           >
             {node.value}
           </button>
