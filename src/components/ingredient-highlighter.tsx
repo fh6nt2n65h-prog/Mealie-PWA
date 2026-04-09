@@ -102,53 +102,77 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
   const tooltipTimeoutRef = useRef<number | null>(null)
   const tooltipElRef = useRef<HTMLDivElement>(null)
   const triggerElRef = useRef<HTMLElement | null>(null)
+  const rafRef = useRef<number | null>(null)
   const rootRef = useRef<HTMLSpanElement | null>(null)
   const nodes = useMemo(() => buildHighlightNodes(text, ingredients), [text, ingredients])
 
   useEffect(() => {
     return () => {
-      if (tooltipTimeoutRef.current) {
-        window.clearTimeout(tooltipTimeoutRef.current)
-      }
+      if (tooltipTimeoutRef.current) window.clearTimeout(tooltipTimeoutRef.current)
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
   }, [])
 
-  // Re-measure trigger element position on scroll so the tooltip follows its word.
+  // Direct DOM scroll tracking — no React re-renders, one update per animation frame.
+  // Also clips the tooltip when the trigger word scrolls behind the header or bottom nav.
   useEffect(() => {
     if (!tooltip) return
     const scrollEl = document.getElementById('app-scroll-root')
     if (!scrollEl) return
 
-    function onScroll() {
+    function updatePosition() {
+      rafRef.current = null
       const trigger = triggerElRef.current
-      if (!trigger) return
-      const rect = trigger.getBoundingClientRect()
-      setTooltip((prev) => prev ? { ...prev, rawX: rect.left + rect.width / 2, y: rect.top } : null)
+      const el = tooltipElRef.current
+      if (!trigger || !el) return
+
+      const triggerRect = trigger.getBoundingClientRect()
+      const scrollRect = scrollEl!.getBoundingClientRect()
+
+      // Hide when the word is behind the header (above) or the nav bar (below)
+      const inBounds = triggerRect.top >= scrollRect.top && triggerRect.bottom <= scrollRect.bottom
+      el.style.visibility = inBounds ? 'visible' : 'hidden'
+      if (!inBounds) return
+
+      const rawX = triggerRect.left + triggerRect.width / 2
+      const w = el.offsetWidth
+      const clampedLeft = Math.max(8, Math.min(rawX - w / 2, window.innerWidth - w - 8))
+      el.style.left = `${clampedLeft}px`
+      el.style.top = `${triggerRect.top}px`
+    }
+
+    function onScroll() {
+      if (rafRef.current !== null) return
+      rafRef.current = requestAnimationFrame(updatePosition)
     }
 
     scrollEl.addEventListener('scroll', onScroll, { passive: true })
-    return () => scrollEl.removeEventListener('scroll', onScroll)
+    return () => {
+      scrollEl.removeEventListener('scroll', onScroll)
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current)
+        rafRef.current = null
+      }
+    }
   }, [tooltip?.id])
 
-  // After each tooltip change the element is in the DOM at opacity:0 (Framer initial).
-  // Measure actual rendered width, then clamp left so the tooltip never escapes the viewport.
-  // This all happens before the browser paints, so there is no visible flicker.
+  // On first appearance: measure actual width and clamp left position before paint.
+  // Depends on tooltip.id only so it doesn't re-run on scroll-driven state changes.
   useLayoutEffect(() => {
     const el = tooltipElRef.current
     if (!el || !tooltip) return
+    el.style.visibility = 'visible'
     const w = el.offsetWidth
     const rawLeft = tooltip.rawX - w / 2
     const clampedLeft = Math.max(8, Math.min(rawLeft, window.innerWidth - w - 8))
     el.style.left = `${clampedLeft}px`
-  }, [tooltip])
+  }, [tooltip?.id])
 
   function showTooltip(element: HTMLElement, ingredient: RecipeIngredient, id: string, duplicate: boolean) {
     triggerElRef.current = element
     const rect = element.getBoundingClientRect()
 
-    if (tooltipTimeoutRef.current) {
-      window.clearTimeout(tooltipTimeoutRef.current)
-    }
+    if (tooltipTimeoutRef.current) window.clearTimeout(tooltipTimeoutRef.current)
 
     const label = getIngredientDisplayText(ingredient) || 'Ingredient'
 
