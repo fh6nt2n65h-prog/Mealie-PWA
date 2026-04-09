@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { flushSync } from 'react-dom'
 import dayjs from 'dayjs'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
+import { ArrowRight, CalendarPlus, Camera, Heart, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
@@ -14,7 +14,7 @@ import { SwipeRecipeDeck } from '@/components/swipe-recipe-deck'
 import { useStoredState } from '@/hooks/use-stored-state'
 import { getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
-import { loadViewMode, saveViewMode } from '@/lib/storage'
+import { loadFavorites, loadViewMode, saveViewMode, toggleFavorite } from '@/lib/storage'
 import { clamp, formatDayLabel, matchesRecipeQuery } from '@/lib/utils'
 
 function buildCalendarDays() {
@@ -81,6 +81,8 @@ export function RecipesPage() {
   const [actionBusy, setActionBusy] = useState(false)
   const [actionError, setActionError] = useState('')
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => loadFavorites(settings))
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const requestIdRef = useRef(0)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -188,7 +190,9 @@ export function RecipesPage() {
   }, [settings.apiToken, settings.baseUrl])
 
   const viewMode = storedViewMode === 'grid' ? 'grid' : 'swipe'
-  const filteredRecipes = recipes.filter((recipe) => matchesRecipeQuery(recipe, searchValue))
+  const filteredRecipes = recipes.filter(
+    (recipe) => matchesRecipeQuery(recipe, searchValue) && (!showFavoritesOnly || (recipe.id != null && favoriteIds.has(recipe.id)))
+  )
   const currentSwipeIndex = clamp(swipeIndex, 0, Math.max(filteredRecipes.length - 1, 0))
   const mealPlanDays = useMemo(() => MEAL_PLAN_DAYS, [])
 
@@ -472,6 +476,20 @@ export function RecipesPage() {
 
         <button
           type="button"
+          onClick={() => setShowFavoritesOnly((v) => !v)}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-paper transition-colors ${
+            showFavoritesOnly
+              ? 'border-terracotta/40 bg-terracotta/10 text-terracotta'
+              : 'border-taupe bg-parchment text-oliveGray'
+          }`}
+          aria-label={showFavoritesOnly ? 'Show all recipes' : 'Show favorites only'}
+          aria-pressed={showFavoritesOnly}
+        >
+          <Heart className={`h-4 w-4 ${showFavoritesOnly ? 'fill-terracotta/70' : ''}`} />
+        </button>
+
+        <button
+          type="button"
           onClick={() => {
             setShowCreateDialog(true)
             setCreateMode('menu')
@@ -528,7 +546,15 @@ export function RecipesPage() {
         {!error && filteredRecipes.length > 0 && viewMode === 'grid' && (
           <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {filteredRecipes.map((recipe) => (
-              <RecipeCard key={recipe.slug} recipe={recipe} baseUrl={settings.baseUrl} onClick={() => navigate(`/recipes/${recipe.slug}`)} onLongPress={() => openRecipeActions(recipe)} />
+              <RecipeCard
+                key={recipe.slug}
+                recipe={recipe}
+                baseUrl={settings.baseUrl}
+                onClick={() => navigate(`/recipes/${recipe.slug}`)}
+                onLongPress={() => openRecipeActions(recipe)}
+                isFavorite={recipe.id != null && favoriteIds.has(recipe.id)}
+                onToggleFavorite={recipe.id != null ? () => setFavoriteIds(toggleFavorite(settings, recipe.id!)) : undefined}
+              />
             ))}
           </section>
         )}
@@ -541,6 +567,8 @@ export function RecipesPage() {
             baseUrl={settings.baseUrl}
             onSelect={(slug) => navigate(`/recipes/${slug}`)}
             onLongPress={(recipe) => openRecipeActions(recipe)}
+            favoriteIds={favoriteIds}
+            onToggleFavorite={(recipeId) => setFavoriteIds(toggleFavorite(settings, recipeId))}
           />
         )}
       </div>
