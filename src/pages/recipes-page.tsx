@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/empty-state'
 import { RecipeCard } from '@/components/recipe-card'
 import { SwipeRecipeDeck } from '@/components/swipe-recipe-deck'
 import { useStoredState } from '@/hooks/use-stored-state'
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh'
 import { getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { loadFavorites, loadViewMode, saveViewMode, toggleFavorite } from '@/lib/storage'
@@ -60,13 +61,11 @@ export function RecipesPage() {
   const { settings } = useSettings()
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState('')
   const [searchValue, setSearchValue] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [storedViewMode] = useStoredState<ViewMode>(loadViewMode, saveViewMode)
   const [swipeIndex, setSwipeIndex] = useState(0)
-  const [pullDistance, setPullDistance] = useState(0)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [createMode, setCreateMode] = useState<'menu' | 'url' | 'image'>('menu')
   const [recipeUrl, setRecipeUrl] = useState('')
@@ -85,10 +84,12 @@ export function RecipesPage() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const requestIdRef = useRef(0)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
-  const touchIntentRef = useRef<'undetermined' | 'vertical' | 'horizontal'>('undetermined')
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
+
+  const { pullDistance, refreshing, handleTouchStart, handleTouchMove, handleTouchEnd } = usePullToRefresh({
+    onRefresh: () => refreshRecipes({ background: true })
+  })
 
   function revokePreviewUrls(urls: string[]) {
     urls.forEach((url) => {
@@ -225,81 +226,6 @@ export function RecipesPage() {
     }
 
     return document.getElementById('app-scroll-root')
-  }
-
-  function handleTouchStart(event: React.TouchEvent<HTMLDivElement>) {
-    if (viewMode === 'swipe') {
-      touchStartRef.current = null
-      touchIntentRef.current = 'horizontal'
-      return
-    }
-
-    const scrollRoot = getScrollRoot()
-
-    if (scrollRoot && scrollRoot.scrollTop <= 0 && !refreshing) {
-      const touch = event.touches[0]
-
-      if (!touch) {
-        return
-      }
-
-      touchStartRef.current = { x: touch.clientX, y: touch.clientY }
-      touchIntentRef.current = 'undetermined'
-    }
-  }
-
-  function handleTouchMove(event: React.TouchEvent<HTMLDivElement>) {
-    if (touchStartRef.current === null) {
-      return
-    }
-
-    const scrollRoot = getScrollRoot()
-
-    if (scrollRoot && scrollRoot.scrollTop > 0) {
-      setPullDistance(0)
-      return
-    }
-
-    const touch = event.touches[0]
-
-    if (!touch) {
-      return
-    }
-
-    const deltaY = touch.clientY - touchStartRef.current.y
-    const deltaX = touch.clientX - touchStartRef.current.x
-
-    if (touchIntentRef.current === 'undetermined') {
-      if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
-        touchIntentRef.current = 'horizontal'
-        setPullDistance(0)
-        return
-      }
-
-      if (Math.abs(deltaY) > 10) {
-        touchIntentRef.current = 'vertical'
-      }
-    }
-
-    if (touchIntentRef.current === 'horizontal') {
-      setPullDistance(0)
-      return
-    }
-
-    if (deltaY > 0) {
-      setPullDistance(Math.min(deltaY * 0.45, 96))
-    }
-  }
-
-  function handleTouchEnd() {
-    const shouldRefresh = touchIntentRef.current === 'vertical' && pullDistance >= 56
-    touchStartRef.current = null
-    touchIntentRef.current = 'undetermined'
-    setPullDistance(0)
-
-    if (shouldRefresh) {
-      void refreshRecipes({ background: true })
-    }
   }
 
   async function handleImportedRecipe(slug: string) {

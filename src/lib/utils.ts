@@ -1,5 +1,5 @@
 import dayjs from 'dayjs'
-import type { Recipe, RecipeSummary, ShoppingListItem } from '@/types/mealie'
+import type { Recipe, RecipeSummary, ShoppingListItem, RecipeIngredient } from '@/types/mealie'
 
 export function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.trim().replace(/\/+$/, '')
@@ -130,4 +130,44 @@ export function buildRemindersShortcutUrl(items: ShoppingListItem[]) {
   })
 
   return `shortcuts://run-shortcut?${params.toString()}`
+}
+
+export function getIngredientDisplayText(ingredient: RecipeIngredient): string {
+  const parts: string[] = []
+
+  if (ingredient.quantity !== null && ingredient.quantity !== undefined) {
+    parts.push(ingredient.quantity.toString())
+  }
+
+  if (ingredient.unit?.abbreviation) {
+    parts.push(ingredient.unit.abbreviation)
+  } else if (ingredient.unit?.name) {
+    parts.push(ingredient.unit.name)
+  }
+
+  if (ingredient.food?.name) {
+    parts.push(ingredient.food.name)
+  }
+
+  return parts.join(' ').trim()
+}
+
+export function extractIngredientKeywords(ingredient: RecipeIngredient): string[] {
+  const keywords: string[] = []
+
+  if (ingredient.food?.name) {
+    const foodName = ingredient.food.name.trim().toLowerCase()
+    keywords.push(foodName)
+
+    // Extract multi-word ingredient keywords (e.g., "all-purpose" from "all-purpose flour")
+    const words = foodName.split(/[\s\-]+/)
+    if (words.length > 1) {
+      // Add the last word (e.g., "flour" from "all-purpose flour")
+      keywords.push(words[words.length - 1])
+      // Add the first word (e.g., "all" from "all-purpose flour")
+      keywords.push(words[0])
+    }
+  }
+
+  return [...new Set(keywords)].filter((k) => k.length > 0)
 }

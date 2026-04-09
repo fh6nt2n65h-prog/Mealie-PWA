@@ -8,6 +8,7 @@ import { useSettings } from '@/app/settings-context'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
+import { IngredientHighlighter } from '@/components/ingredient-highlighter'
 import { removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
@@ -523,7 +524,13 @@ export function RecipeDetailPage() {
                 <span className="font-display text-4xl leading-none text-terracotta">{index + 1}</span>
                 <div>
                   {step.title && <h4 className="text-base font-semibold text-ink">{step.title}</h4>}
-                  <p className={`mt-1 ${cookMode ? 'text-xl leading-9 text-ink' : 'text-sm leading-7 text-oliveGray'}`}>{step.text}</p>
+                  <p className={`mt-1 ${cookMode ? 'text-xl leading-9 text-ink' : 'text-sm leading-7 text-oliveGray'}`}>
+                    {cookMode ? (
+                      <IngredientHighlighter text={step.text} ingredients={recipe.recipeIngredient} />
+                    ) : (
+                      step.text
+                    )}
+                  </p>
                 </div>
               </li>
             ))}
