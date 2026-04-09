@@ -228,7 +228,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
             type="button"
             onClick={(event) => showTooltip(event.currentTarget, node.ingredient, node.id, node.duplicate)}
             onTouchStart={(event) => showTooltip(event.currentTarget, node.ingredient, node.id, node.duplicate)}
-            className={`inline rounded-[0.7rem] border border-transparent px-1.5 py-0.5 font-semibold text-terracotta transition-all duration-150 ${tooltip?.id === node.id ? 'bg-terracotta/14 text-ink shadow-insetPaper' : 'bg-terracotta/8 hover:bg-terracotta/12 active:bg-terracotta/16'}`}
+            className={`inline-block align-baseline font-semibold text-terracotta transition-all duration-150 cursor-pointer ${tooltip?.id === node.id ? 'scale-[1.12] blur-[1.5px]' : ''}`}
           >
             {node.value}
           </button>

@@ -15,7 +15,7 @@ import { useStoredState } from '@/hooks/use-stored-state'
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh'
 import { RECIPE_CACHE_UPDATED_EVENT, getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
-import { loadFavorites, loadViewMode, saveViewMode, toggleFavorite } from '@/lib/storage'
+import { loadFavorites, loadViewMode, saveFavorites, saveViewMode } from '@/lib/storage'
 import { clamp, formatDayLabel, matchesRecipeQuery } from '@/lib/utils'
 
 function buildCalendarDays() {
@@ -82,6 +82,7 @@ export function RecipesPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => loadFavorites(settings))
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const requestIdRef = useRef(0)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
@@ -185,6 +186,31 @@ export function RecipesPage() {
     }
   }, [settings.apiToken, settings.baseUrl])
 
+  // Load the current user id and sync server favorites on startup
+  useEffect(() => {
+    if (!settings.apiToken) return
+    const api = new MealieApi(settings)
+
+    async function syncServerFavorites() {
+      try {
+        const user = await api.getCurrentUser()
+        setUserId(user.id)
+        const result = await api.getUserFavorites(user.id)
+        const serverIds = new Set(
+          result.ratings
+            .filter((r) => r.isFavorite)
+            .map((r) => r.recipeId)
+        )
+        setFavoriteIds(serverIds)
+        saveFavorites(settings, serverIds)
+      } catch {
+        // Server unreachable — keep local favorites as-is
+      }
+    }
+
+    void syncServerFavorites()
+  }, [settings.apiToken, settings.baseUrl])
+
   useEffect(() => {
     if (typeof window === 'undefined' || !settings.apiToken) {
       return
@@ -204,6 +230,29 @@ export function RecipesPage() {
       window.removeEventListener(RECIPE_CACHE_UPDATED_EVENT, syncRecipesFromCache)
     }
   }, [settings.apiToken, settings.baseUrl])
+
+  async function handleToggleFavorite(recipeId: string, slug: string) {
+    const wasFavorite = favoriteIds.has(recipeId)
+    const next = new Set(favoriteIds)
+    if (wasFavorite) next.delete(recipeId)
+    else next.add(recipeId)
+    setFavoriteIds(next)
+    saveFavorites(settings, next)
+
+    if (!userId) return
+    const api = new MealieApi(settings)
+    try {
+      if (wasFavorite) {
+        await api.removeFavorite(userId, slug)
+      } else {
+        await api.addFavorite(userId, slug)
+      }
+    } catch {
+      // Revert optimistic update on failure
+      setFavoriteIds(favoriteIds)
+      saveFavorites(settings, favoriteIds)
+    }
+  }
 
   const viewMode = storedViewMode === 'grid' ? 'grid' : 'swipe'
   const filteredRecipes = recipes.filter(
@@ -486,7 +535,7 @@ export function RecipesPage() {
                 onClick={() => navigate(`/recipes/${recipe.slug}`)}
                 onLongPress={() => openRecipeActions(recipe)}
                 isFavorite={recipe.id != null && favoriteIds.has(recipe.id)}
-                onToggleFavorite={recipe.id != null ? () => setFavoriteIds(toggleFavorite(settings, recipe.id!)) : undefined}
+                onToggleFavorite={recipe.id != null ? () => void handleToggleFavorite(recipe.id!, recipe.slug) : undefined}
               />
             ))}
           </section>
@@ -501,7 +550,10 @@ export function RecipesPage() {
             onSelect={(slug) => navigate(`/recipes/${slug}`)}
             onLongPress={(recipe) => openRecipeActions(recipe)}
             favoriteIds={favoriteIds}
-            onToggleFavorite={(recipeId) => setFavoriteIds(toggleFavorite(settings, recipeId))}
+            onToggleFavorite={(recipeId) => {
+              const r = filteredRecipes.find((x) => x.id === recipeId)
+              if (r) void handleToggleFavorite(recipeId, r.slug)
+            }}
           />
         )}
       </div>

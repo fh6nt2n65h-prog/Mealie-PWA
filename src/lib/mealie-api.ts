@@ -11,7 +11,8 @@ import type {
   ShoppingListItem,
   ShoppingListSummary,
   UpdateMealPlanEntryInput,
-  UserProfile
+  UserProfile,
+  UserRatings,
 } from '@/types/mealie'
 import { buildApiBaseUrl } from '@/lib/utils'
 
@@ -228,6 +229,22 @@ export class MealieApi {
   async addRecipeToShoppingList(listId: string, recipeId: string) {
     return this.request(`/households/shopping/lists/${listId}/recipe/${recipeId}`, {
       method: 'POST'
+    })
+  }
+
+  async getUserFavorites(userId: string) {
+    return this.request<UserRatings>(`/users/${encodeURIComponent(userId)}/favorites`)
+  }
+
+  async addFavorite(userId: string, slug: string) {
+    return this.request<void>(`/users/${encodeURIComponent(userId)}/favorites/${encodeURIComponent(slug)}`, {
+      method: 'POST'
+    })
+  }
+
+  async removeFavorite(userId: string, slug: string) {
+    return this.request<void>(`/users/${encodeURIComponent(userId)}/favorites/${encodeURIComponent(slug)}`, {
+      method: 'DELETE'
     })
   }
 

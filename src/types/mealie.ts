@@ -168,6 +168,16 @@ export type UserProfile = {
   household?: string
 }
 
+export type UserRatingOut = {
+  recipeId: string
+  rating?: number | null
+  isFavorite?: boolean
+}
+
+export type UserRatings = {
+  ratings: UserRatingOut[]
+}
+
 export type ApiErrorPayload = {
   detail?: Array<{
     msg?: string
