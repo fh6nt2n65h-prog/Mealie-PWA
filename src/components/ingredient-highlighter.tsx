@@ -151,7 +151,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.15 }}
-            className="pointer-events-none absolute z-40 -translate-x-1/2 -translate-y-[calc(100%+8px)] rounded-[0.8rem] bg-ink px-2.5 py-1.5 text-xs font-semibold text-parchment shadow-paper"
+            className="pointer-events-none absolute z-40 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold text-parchment shadow-paper"
             style={{
               left: `${tooltip.x}px`,
               top: `${tooltip.y}px`

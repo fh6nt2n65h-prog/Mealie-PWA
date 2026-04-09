@@ -60,7 +60,6 @@ export function SettingsPage() {
         <div className="mt-6 space-y-5">
           <SettingField
             label="Mealie Base URL"
-            description="The app adds /api automatically. For a Pi deployment that proxies Mealie through this client, use the client URL here instead of the raw Mealie URL."
             value={draftSettings.baseUrl}
             onChange={(event) => setDraftSettings((current) => ({ ...current, baseUrl: event.target.value }))}
             placeholder="http://192.168.1.91:9000"
@@ -68,7 +67,6 @@ export function SettingsPage() {
 
           <SettingField
             label="API Token"
-            description="Paste a long-lived Mealie API token here. It is sent as a Bearer token on each request."
             value={draftSettings.apiToken}
             onChange={(event) => setDraftSettings((current) => ({ ...current, apiToken: event.target.value }))}
             placeholder="Paste your Mealie API token"
@@ -78,7 +76,6 @@ export function SettingsPage() {
           <div className="space-y-3 rounded-[1.4rem] bg-oat/60 px-4 py-4">
             <div>
               <p className="text-sm font-semibold text-ink">Recipe view</p>
-              <p className="mt-1 text-sm leading-6 text-oliveGray">Choose how recipes open by default.</p>
             </div>
             <SegmentedControl
               value={viewMode}
