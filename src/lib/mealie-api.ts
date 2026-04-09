@@ -5,6 +5,7 @@ import type {
   CreateRecipeInput,
   MealPlanEntry,
   Pagination,
+  ParsedIngredientResult,
   Recipe,
   RecipeSummary,
   ShoppingList,
@@ -222,5 +223,14 @@ export class MealieApi {
     return this.request(`/households/shopping/lists/${listId}/recipe/${recipeId}`, {
       method: 'POST'
     })
+  }
+
+  async parseIngredient(ingredient: string) {
+    const result = await this.request<ParsedIngredientResult | ParsedIngredientResult[]>('/parser/ingredient', {
+      method: 'POST',
+      body: JSON.stringify({ ingredient })
+    })
+
+    return Array.isArray(result) ? result[0] || {} : result
   }
 }

@@ -5,6 +5,7 @@ import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { CreateMealPlanEntryInput, MealPlanEntry, PlanEntryType, RecipeSummary, UpdateMealPlanEntryInput } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
 import { SearchField } from '@/components/search-field'
@@ -70,6 +71,7 @@ export function MealPlanPage() {
   const [editorError, setEditorError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [confirmDeleteEntryId, setConfirmDeleteEntryId] = useState<number | null>(null)
   const [recipeOptions, setRecipeOptions] = useState<RecipeSummary[]>([])
   const [recipeSearch, setRecipeSearch] = useState('')
   const [loadingRecipeOptions, setLoadingRecipeOptions] = useState(false)
@@ -325,11 +327,16 @@ export function MealPlanPage() {
       return
     }
 
-    const confirmed = window.confirm('Delete this meal plan entry?')
+    setConfirmDeleteEntryId(entryId)
+  }
 
-    if (!confirmed) {
+  async function confirmDeleteEntry() {
+    if (!settings.apiToken || confirmDeleteEntryId === null || deletingId === confirmDeleteEntryId) {
       return
     }
+
+    const entryId = confirmDeleteEntryId
+    setConfirmDeleteEntryId(null)
 
     setDeletingId(entryId)
 
@@ -528,7 +535,7 @@ export function MealPlanPage() {
                     key={mealType}
                     type="button"
                     onClick={() => setDraft((current) => ({ ...current, entryType: mealType }))}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold ${selected ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
+                    className={`rounded-full border px-4 py-2 text-sm font-semibold ${selected ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
                   >
                     {titleize(mealType)}
                   </button>
@@ -541,14 +548,14 @@ export function MealPlanPage() {
             <button
               type="button"
               onClick={() => setDraft((current) => ({ ...current, mode: 'recipe', title: '' }))}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${draft.mode === 'recipe' ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold ${draft.mode === 'recipe' ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
             >
               Recipe
             </button>
             <button
               type="button"
               onClick={() => setDraft((current) => ({ ...current, mode: 'note', recipeId: '' }))}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${draft.mode === 'note' ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold ${draft.mode === 'note' ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
             >
               Note
             </button>
@@ -617,6 +624,16 @@ export function MealPlanPage() {
           {editorError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{editorError}</p>}
         </div>
       </DialogSheet>
+
+      <ConfirmDialog
+        open={confirmDeleteEntryId !== null}
+        title="Delete meal plan entry"
+        description="Delete this meal plan entry?"
+        confirmLabel="Delete entry"
+        busy={deletingId !== null}
+        onCancel={() => setConfirmDeleteEntryId(null)}
+        onConfirm={() => void confirmDeleteEntry()}
+      />
     </>
   )
 }

@@ -6,6 +6,7 @@ import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, Re
 import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
 import { RecipeCard } from '@/components/recipe-card'
@@ -79,6 +80,7 @@ export function RecipesPage() {
   const [mealPlanType, setMealPlanType] = useState<PlanEntryType>('dinner')
   const [actionBusy, setActionBusy] = useState(false)
   const [actionError, setActionError] = useState('')
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const requestIdRef = useRef(0)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
@@ -370,16 +372,11 @@ export function RecipesPage() {
     setRecipeActionMode('menu')
     setActionBusy(false)
     setActionError('')
+    setConfirmDeleteOpen(false)
   }
 
   async function handleDeleteFromActions() {
     if (!selectedRecipe || actionBusy) {
-      return
-    }
-
-    const confirmed = window.confirm(`Delete ${selectedRecipe.name || 'this recipe'} from Mealie?`)
-
-    if (!confirmed) {
       return
     }
 
@@ -698,7 +695,7 @@ export function RecipesPage() {
             </button>
             <button
               type="button"
-              onClick={() => void handleDeleteFromActions()}
+              onClick={() => setConfirmDeleteOpen(true)}
               className="flex w-full items-center gap-3 rounded-[1.25rem] border border-terracotta/30 bg-terracotta/10 px-4 py-4 text-left"
             >
               <Trash2 className="h-5 w-5 text-terracotta" />
@@ -743,7 +740,7 @@ export function RecipesPage() {
                       key={type}
                       type="button"
                       onClick={() => setMealPlanType(type)}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold ${isSelected ? 'bg-ink text-parchment' : 'border border-taupe bg-cream text-ink'}`}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold ${isSelected ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
                     >
                       {type.charAt(0).toUpperCase() + type.slice(1)}
                     </button>
@@ -755,6 +752,16 @@ export function RecipesPage() {
           </div>
         )}
       </DialogSheet>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen && Boolean(selectedRecipe)}
+        title="Delete recipe"
+        description={`Delete ${selectedRecipe?.name || 'this recipe'} from Mealie?`}
+        confirmLabel="Delete recipe"
+        busy={actionBusy}
+        onCancel={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => void handleDeleteFromActions()}
+      />
     </>
   )
 }
