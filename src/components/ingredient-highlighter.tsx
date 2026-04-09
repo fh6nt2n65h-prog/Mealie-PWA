@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useMotionValue } from 'framer-motion'
 import type { RecipeIngredient } from '@/types/mealie'
 import { extractIngredientKeywords, getIngredientDisplayText } from '@/lib/utils'
 
@@ -102,8 +102,17 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
   const tooltipTimeoutRef = useRef<number | null>(null)
   const tooltipElRef = useRef<HTMLDivElement>(null)
   const triggerElRef = useRef<HTMLElement | null>(null)
+  // Clamped left/top set at initial placement so scroll handler can diff
+  const initialPosRef = useRef<{ left: number; top: number } | null>(null)
+  // Measured size captured once so scroll handler never reads offsetWidth mid-frame
+  const tooltipSizeRef = useRef<{ w: number; h: number }>({ w: 0, h: 0 })
   const rafRef = useRef<number | null>(null)
   const rootRef = useRef<HTMLSpanElement | null>(null)
+
+  // GPU-composited scroll offsets — driven without React re-renders
+  const scrollDx = useMotionValue(0)
+  const scrollDy = useMotionValue(0)
+
   const nodes = useMemo(() => buildHighlightNodes(text, ingredients), [text, ingredients])
 
   useEffect(() => {
@@ -113,10 +122,10 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
     }
   }, [])
 
-  // Direct DOM scroll tracking — no React re-renders, one update per animation frame.
-  // Also clips the tooltip when the trigger word scrolls behind the header or bottom nav.
+  // Single permanent scroll listener registered ONCE on mount.
+  // Old approach re-registered on tooltip?.id change, leaving a gap between cleanup and
+  // re-registration during which the second tooltip had no listener and froze in place.
   useEffect(() => {
-    if (!tooltip) return
     const scrollEl = document.getElementById('app-scroll-root')
     if (!scrollEl) return
 
@@ -124,21 +133,27 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
       rafRef.current = null
       const trigger = triggerElRef.current
       const el = tooltipElRef.current
-      if (!trigger || !el) return
+      const initPos = initialPosRef.current
+      if (!trigger || !el || !initPos) return
 
       const triggerRect = trigger.getBoundingClientRect()
-      const scrollRect = scrollEl!.getBoundingClientRect()
+      const scrollRect = scrollEl.getBoundingClientRect()
 
-      // Hide when the word is behind the header (above) or the nav bar (below)
-      const inBounds = triggerRect.top >= scrollRect.top && triggerRect.bottom <= scrollRect.bottom
+      // Clip when trigger scrolls behind the header or bottom nav
+      const midY = triggerRect.top + triggerRect.height / 2
+      const inBounds = midY > scrollRect.top && midY < scrollRect.bottom
       el.style.visibility = inBounds ? 'visible' : 'hidden'
       if (!inBounds) return
 
-      const rawX = triggerRect.left + triggerRect.width / 2
-      const w = el.offsetWidth
-      const clampedLeft = Math.max(8, Math.min(rawX - w / 2, window.innerWidth - w - 8))
-      el.style.left = `${clampedLeft}px`
-      el.style.top = `${triggerRect.top}px`
+      // Compute new ideal position
+      const { w, h } = tooltipSizeRef.current
+      const centerX = triggerRect.left + triggerRect.width / 2
+      const newLeft = Math.max(8, Math.min(centerX - w / 2, window.innerWidth - w - 8))
+      const newTop = triggerRect.top - h - 10
+
+      // Motion value set = GPU transform update, zero layout cost
+      scrollDx.set(newLeft - initPos.left)
+      scrollDy.set(newTop - initPos.top)
     }
 
     function onScroll() {
@@ -154,19 +169,31 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
         rafRef.current = null
       }
     }
-  }, [tooltip?.id])
+  }, [scrollDx, scrollDy])
 
-  // On first appearance: measure actual width and clamp left position before paint.
-  // Depends on tooltip.id only so it doesn't re-run on scroll-driven state changes.
+  // Initial placement: sets left/top ONCE per tooltip id before the browser paints.
+  // Resets scroll offset to 0 so the new tooltip starts centred on its word.
+  // left/top are not owned by Framer Motion so they persist alongside x/y motion values.
   useLayoutEffect(() => {
     const el = tooltipElRef.current
     if (!el || !tooltip) return
+
+    scrollDx.set(0)
+    scrollDy.set(0)
     el.style.visibility = 'visible'
+
     const w = el.offsetWidth
+    const h = el.offsetHeight
+    tooltipSizeRef.current = { w, h }
+
     const rawLeft = tooltip.rawX - w / 2
     const clampedLeft = Math.max(8, Math.min(rawLeft, window.innerWidth - w - 8))
+    const top = tooltip.y - h - 10
+
     el.style.left = `${clampedLeft}px`
-  }, [tooltip?.id])
+    el.style.top = `${top}px`
+    initialPosRef.current = { left: clampedLeft, top }
+  }, [tooltip?.id, scrollDx, scrollDy])
 
   function showTooltip(element: HTMLElement, ingredient: RecipeIngredient, id: string, duplicate: boolean) {
     triggerElRef.current = element
@@ -214,14 +241,13 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
             <motion.div
               ref={tooltipElRef}
               key={tooltip.id}
+              // x/y are GPU-composited by Framer Motion (no layout cost per frame).
+              // left/top set once in layoutEffect above and not touched by Framer Motion.
+              style={{ x: scrollDx, y: scrollDy }}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1, transition: { duration: 0.12 } }}
               exit={{ opacity: 0, transition: { duration: 0.35, ease: 'easeOut' } }}
-              className="pointer-events-none fixed z-50 -translate-y-[calc(100%+10px)] rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
-              style={{
-                left: `${tooltip.rawX}px`,
-                top: `${tooltip.y}px`
-              }}
+              className="pointer-events-none fixed z-50 rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
             >
               <p className="max-w-[min(19rem,calc(100vw-1rem))] whitespace-nowrap">{tooltip.text}</p>
               {tooltip.duplicate ? <p className="mt-0.5 text-[0.7rem] italic text-parchment/75">Duplicate</p> : null}
