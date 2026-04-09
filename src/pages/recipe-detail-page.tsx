@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowDown01, CookingPot, EllipsisVertical, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
-import { convertRecipeIngredients, hasImperialIngredients } from '@/lib/unit-converter'
+import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
@@ -95,7 +95,7 @@ export function RecipeDetailPage() {
   })
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
-  const [convertStatus, setConvertStatus] = useState<{ convertedCount: number; skippedCount: number; skippedNames: string[] } | null>(null)
+  const [convertStatus, setConvertStatus] = useState<{ convertedCount: number; skippedCount: number; skippedNames: string[]; stepsConverted: number } | null>(null)
 
   const buttonsRowRef = useRef<HTMLDivElement>(null)
 
@@ -338,8 +338,14 @@ export function RecipeDetailPage() {
       }
     })
 
-    setEditDraft((d) => ({ ...d, ingredients: newIngredients }))
-    setConvertStatus({ convertedCount: result.convertedCount, skippedCount: result.skippedCount, skippedNames: result.skippedNames })
+    const tempResult = convertTemperaturesInSteps(editDraft.instructions.map((s) => s.text))
+    const newInstructions = editDraft.instructions.map((step, idx) => ({
+      ...step,
+      text: tempResult.steps[idx] ?? step.text,
+    }))
+
+    setEditDraft((d) => ({ ...d, ingredients: newIngredients, instructions: newInstructions }))
+    setConvertStatus({ convertedCount: result.convertedCount, skippedCount: result.skippedCount, skippedNames: result.skippedNames, stepsConverted: tempResult.convertedCount })
   }
 
   async function handleSaveEdit() {
@@ -660,6 +666,7 @@ export function RecipeDetailPage() {
             {convertStatus && (
               <p className="rounded-[1.1rem] bg-sage/15 px-3.5 py-2.5 text-xs leading-5 text-olive">
                 {convertStatus.convertedCount} ingredient{convertStatus.convertedCount !== 1 ? 's' : ''} converted.
+                {convertStatus.stepsConverted > 0 && ` ${convertStatus.stepsConverted} step${convertStatus.stepsConverted !== 1 ? 's' : ''} with temperatures updated.`}
                 {convertStatus.skippedCount > 0 && ` ${convertStatus.skippedCount} skipped: ${convertStatus.skippedNames.slice(0, 3).join(', ')}${convertStatus.skippedNames.length > 3 ? '…' : ''}.`}
               </p>
             )}

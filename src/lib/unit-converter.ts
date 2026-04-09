@@ -112,3 +112,31 @@ export function hasImperialIngredients(ingredients: RecipeIngredient[]): boolean
     return unitKey in VOLUME_TO_ML || unitKey in WEIGHT_TO_G
   })
 }
+
+// Matches patterns like: 350°F  350 °F  350F  350 degrees F  350 degrees Fahrenheit
+const FAHRENHEIT_RE = /(\d+(?:\.\d+)?)\s*(?:°\s*F|degrees?\s+F(?:ahrenheit)?|°\s*Fahrenheit)\b/gi
+
+function fToC(f: number): number {
+  return Math.round((f - 32) * 5 / 9)
+}
+
+export type StepConversionResult = {
+  steps: string[]
+  convertedCount: number
+}
+
+export function convertTemperaturesInSteps(stepTexts: string[]): StepConversionResult {
+  let convertedCount = 0
+
+  const steps = stepTexts.map((text) => {
+    let changed = false
+    const result = text.replace(FAHRENHEIT_RE, (_match, deg: string) => {
+      changed = true
+      return `${fToC(parseFloat(deg))}°C`
+    })
+    if (changed) convertedCount++
+    return result
+  })
+
+  return { steps, convertedCount }
+}
