@@ -1,4 +1,5 @@
 import clsx from 'clsx'
+import { Heart } from 'lucide-react'
 import { useRef } from 'react'
 import type { Recipe, RecipeSummary } from '@/types/mealie'
 import { formatDuration, getRecipeImageUrl } from '@/lib/utils'
@@ -8,11 +9,13 @@ type RecipeCardProps = {
   baseUrl: string
   onClick: () => void
   onLongPress?: () => void
+  onToggleFavorite?: () => void
+  isFavorite?: boolean
   compact?: boolean
   featured?: boolean
 }
 
-export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, compact = false, featured = false }: RecipeCardProps) {
+export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, onToggleFavorite, isFavorite = false, compact = false, featured = false }: RecipeCardProps) {
   const image = getRecipeImageUrl(baseUrl, recipe, 'small')
   const longPressTimerRef = useRef<number | null>(null)
   const suppressClickRef = useRef(false)
@@ -73,11 +76,25 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, compact = fa
       )}
     >
       {!compact && (
-        <div className="bg-oat p-3">
+        <div className="relative bg-oat p-3">
           {image ? (
             <img src={image} alt={recipe.name || 'Recipe'} className={clsx('w-full rounded-[1.15rem] object-cover', featured ? 'aspect-[1/1]' : 'aspect-[4/3]')} />
           ) : (
             <div className={clsx('rounded-[1.15rem] bg-gradient-to-br from-oat via-parchment to-cream', featured ? 'aspect-[1/1]' : 'aspect-[4/3]')} />
+          )}
+          {onToggleFavorite && (
+            <button
+              type="button"
+              aria-label={isFavorite ? 'Remove from favourites' : 'Add to favourites'}
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite() }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
+              className="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-parchment/80 backdrop-blur-sm shadow-paper"
+            >
+              <Heart
+                className={clsx('h-4 w-4 transition-colors', isFavorite ? 'fill-terracotta/70 text-terracotta/70' : 'text-oliveGray')}
+              />
+            </button>
           )}
         </div>
       )}
