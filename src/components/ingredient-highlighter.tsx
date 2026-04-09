@@ -47,7 +47,7 @@ function buildHighlightNodes(text: string, ingredients: RecipeIngredient[]): Hig
   let cursor = 0
 
   while (cursor < text.length) {
-    let nextMatch: { index: number; value: string; ingredient: RecipeIngredient; id: string } | null = null
+    let nextMatch: { index: number; value: string; ingredient: RecipeIngredient; id: string; duplicate: boolean } | null = null
 
     for (const keyword of keywords) {
       const regex = new RegExp(`\\b${escapeRegExp(keyword)}\\b`, 'i')
