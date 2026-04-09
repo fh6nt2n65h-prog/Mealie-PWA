@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
 import { IngredientHighlighter } from '@/components/ingredient-highlighter'
-import { removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
+import { invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
 
@@ -328,6 +328,7 @@ export function RecipeDetailPage() {
       setRecipe(refreshed)
       setServings(refreshed.recipeServings || 1)
       upsertRecipeCacheEntry(settings, refreshed)
+      invalidateRecipesLoadedThisSession(settings)
       setEditOpen(false)
     } catch (saveErr) {
       setEditError(saveErr instanceof Error ? saveErr.message : 'Unable to save recipe changes.')

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { RecipeIngredient } from '@/types/mealie'
 import { extractIngredientKeywords, getIngredientDisplayText } from '@/lib/utils'
@@ -9,15 +9,86 @@ type IngredientHighlighterProps = {
 }
 
 type TooltipState = {
+  id: string
   text: string
   x: number
   y: number
 }
 
+type HighlightNode =
+  | { type: 'text'; value: string }
+  | { type: 'highlight'; value: string; ingredient: RecipeIngredient; id: string }
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function buildHighlightNodes(text: string, ingredients: RecipeIngredient[]): HighlightNode[] {
+  const ingredientMap = new Map<string, RecipeIngredient>()
+
+  ingredients.forEach((ingredient) => {
+    extractIngredientKeywords(ingredient).forEach((keyword) => {
+      if (!ingredientMap.has(keyword)) {
+        ingredientMap.set(keyword, ingredient)
+      }
+    })
+  })
+
+  const keywords = Array.from(ingredientMap.keys()).sort((a, b) => b.length - a.length)
+  const nodes: HighlightNode[] = []
+  let cursor = 0
+
+  while (cursor < text.length) {
+    let nextMatch: { index: number; value: string; ingredient: RecipeIngredient; id: string } | null = null
+
+    for (const keyword of keywords) {
+      const regex = new RegExp(`\\b${escapeRegExp(keyword)}\\b`, 'i')
+      const slice = text.slice(cursor)
+      const match = regex.exec(slice)
+
+      if (!match || match.index === undefined) {
+        continue
+      }
+
+      const absoluteIndex = cursor + match.index
+      const candidate = {
+        index: absoluteIndex,
+        value: match[0],
+        ingredient: ingredientMap.get(keyword)!,
+        id: `${keyword}-${absoluteIndex}`,
+      }
+
+      if (!nextMatch || absoluteIndex < nextMatch.index || (absoluteIndex === nextMatch.index && candidate.value.length > nextMatch.value.length)) {
+        nextMatch = candidate
+      }
+    }
+
+    if (!nextMatch) {
+      nodes.push({ type: 'text', value: text.slice(cursor) })
+      break
+    }
+
+    if (nextMatch.index > cursor) {
+      nodes.push({ type: 'text', value: text.slice(cursor, nextMatch.index) })
+    }
+
+    nodes.push({
+      type: 'highlight',
+      value: nextMatch.value,
+      ingredient: nextMatch.ingredient,
+      id: nextMatch.id,
+    })
+
+    cursor = nextMatch.index + nextMatch.value.length
+  }
+
+  return nodes
+}
+
 export function IngredientHighlighter({ text, ingredients }: IngredientHighlighterProps) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const tooltipTimeoutRef = useRef<number | null>(null)
-  const tooltipRef = useRef<HTMLDivElement | null>(null)
+  const nodes = useMemo(() => buildHighlightNodes(text, ingredients), [text, ingredients])
 
   useEffect(() => {
     return () => {
@@ -27,74 +98,20 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
     }
   }, [])
 
-  // Build a map of ingredient keywords to ingredients for quick lookup
-  const ingredientMap = new Map<string, RecipeIngredient>()
-  ingredients.forEach((ingredient) => {
-    extractIngredientKeywords(ingredient).forEach((keyword) => {
-      ingredientMap.set(keyword, ingredient)
-    })
-  })
-
-  // Parse text into nodes, highlighting matching ingredients
-  const nodes: Array<{ type: 'text' | 'highlight'; value: string; ingredient?: RecipeIngredient }> = []
-  let remaining = text
-  const keywords = Array.from(ingredientMap.keys()).sort((a, b) => b.length - a.length) // Sort by length desc for longer matches first
-
-  while (remaining.length > 0) {
-    let foundMatch = false
-
-    for (const keyword of keywords) {
-      // Case-insensitive match with word boundaries
-      const regex = new RegExp(`\\b${keyword}\\b`, 'i')
-      const match = remaining.match(regex)
-
-      if (match && match.index !== undefined) {
-        // Add text before match
-        if (match.index > 0) {
-          nodes.push({ type: 'text', value: remaining.substring(0, match.index) })
-        }
-
-        // Add highlighted match
-        nodes.push({
-          type: 'highlight',
-          value: match[0],
-          ingredient: ingredientMap.get(keyword)
-        })
-
-        // Continue with remaining text
-        remaining = remaining.substring(match.index + match[0].length)
-        foundMatch = true
-        break
-      }
-    }
-
-    if (!foundMatch) {
-      // No more matches, add remaining text
-      if (remaining.length > 0) {
-        nodes.push({ type: 'text', value: remaining })
-      }
-      break
-    }
-  }
-
-  function handleHighlightTap(e: React.TouchEvent<HTMLSpanElement>, ingredient: RecipeIngredient) {
-    e.preventDefault()
-    const element = e.currentTarget
+  function showTooltip(element: HTMLElement, ingredient: RecipeIngredient, id: string) {
     const rect = element.getBoundingClientRect()
 
-    // Clear existing timeout
     if (tooltipTimeoutRef.current) {
       window.clearTimeout(tooltipTimeoutRef.current)
     }
 
-    const tooltipText = getIngredientDisplayText(ingredient)
     setTooltip({
-      text: tooltipText,
+      id,
+      text: getIngredientDisplayText(ingredient),
       x: rect.left,
       y: rect.top
     })
 
-    // Auto-hide after 3 seconds
     tooltipTimeoutRef.current = window.setTimeout(() => {
       setTooltip(null)
       tooltipTimeoutRef.current = null
@@ -107,37 +124,21 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
         node.type === 'text' ? (
           <span key={index}>{node.value}</span>
         ) : (
-          <span
-            key={index}
-            onTouchStart={(e) => handleHighlightTap(e, node.ingredient!)}
-            onClick={(e) => {
-              e.preventDefault()
-              const rect = e.currentTarget.getBoundingClientRect()
-              if (tooltipTimeoutRef.current) {
-                window.clearTimeout(tooltipTimeoutRef.current)
-              }
-              const tooltipText = getIngredientDisplayText(node.ingredient!)
-              setTooltip({
-                text: tooltipText,
-                x: rect.left,
-                y: rect.top
-              })
-              tooltipTimeoutRef.current = window.setTimeout(() => {
-                setTooltip(null)
-                tooltipTimeoutRef.current = null
-              }, 3000)
-            }}
-            className="font-semibold text-terracotta cursor-pointer hover:underline"
+          <button
+            key={node.id}
+            type="button"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => showTooltip(event.currentTarget, node.ingredient, node.id)}
+            className={`inline rounded-[0.7rem] border border-transparent px-1.5 py-0.5 font-semibold text-terracotta transition-all duration-150 ${tooltip?.id === node.id ? 'bg-terracotta/14 text-ink shadow-insetPaper' : 'bg-terracotta/8 hover:bg-terracotta/12 active:bg-terracotta/16'}`}
           >
             {node.value}
-          </span>
+          </button>
         )
       )}
 
       <AnimatePresence>
         {tooltip && (
           <motion.div
-            ref={tooltipRef}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}

@@ -2,6 +2,7 @@ import type { ApiSettings, Recipe } from '@/types/mealie'
 import { normalizeBaseUrl } from '@/lib/utils'
 
 const RECIPE_CACHE_KEY = 'mealie-journal.recipe-cache.v1'
+export const RECIPE_CACHE_UPDATED_EVENT = 'mealie-journal:recipe-cache-updated'
 
 type RecipeCacheEntry = {
   recipes: Recipe[]
@@ -15,6 +16,19 @@ const memoryCache = new Map<string, RecipeCacheEntry>()
 
 function getCacheKey(settings: ApiSettings) {
   return `${normalizeBaseUrl(settings.baseUrl)}::${settings.apiToken.slice(0, 12)}`
+}
+
+function dispatchRecipeCacheUpdated(settings: ApiSettings, updatedAt: string) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.dispatchEvent(new CustomEvent(RECIPE_CACHE_UPDATED_EVENT, {
+    detail: {
+      key: getCacheKey(settings),
+      updatedAt,
+    },
+  }))
 }
 
 function loadStore(): RecipeCacheStore {
@@ -71,6 +85,7 @@ export function setRecipeCache(settings: ApiSettings, recipes: Recipe[]) {
   const store = loadStore()
   store[key] = entry
   saveStore(store)
+  dispatchRecipeCacheUpdated(settings, entry.updatedAt)
 
   return entry
 }
@@ -102,4 +117,8 @@ export function hasLoadedRecipesThisSession(settings: ApiSettings) {
 
 export function markRecipesLoadedThisSession(settings: ApiSettings) {
   sessionLoadedKeys.add(getCacheKey(settings))
+}
+
+export function invalidateRecipesLoadedThisSession(settings: ApiSettings) {
+  sessionLoadedKeys.delete(getCacheKey(settings))
 }

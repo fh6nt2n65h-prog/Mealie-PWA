@@ -450,7 +450,7 @@ export function MealPlanPage() {
                                     {entry.recipe?.slug ? (
                                       <Link
                                         to={`/recipes/${entry.recipe.slug}`}
-                                        className="block font-display text-xl tracking-[-0.03em] text-ink hover:underline"
+                                        className="-mx-2 -my-1 inline-flex max-w-full rounded-[0.9rem] px-2 py-1 font-display text-xl tracking-[-0.03em] text-ink transition-colors duration-150 hover:bg-oat/70 active:bg-oat"
                                       >
                                         {entry.recipe.name || 'Planned item'}
                                       </Link>

@@ -13,7 +13,7 @@ import { RecipeCard } from '@/components/recipe-card'
 import { SwipeRecipeDeck } from '@/components/swipe-recipe-deck'
 import { useStoredState } from '@/hooks/use-stored-state'
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh'
-import { getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
+import { RECIPE_CACHE_UPDATED_EVENT, getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { loadFavorites, loadViewMode, saveViewMode, toggleFavorite } from '@/lib/storage'
 import { clamp, formatDayLabel, matchesRecipeQuery } from '@/lib/utils'
@@ -182,6 +182,26 @@ export function RecipesPage() {
 
     if (!hasLoadedRecipesThisSession(settings)) {
       void refreshRecipes({ background: Boolean(cacheEntry) })
+    }
+  }, [settings.apiToken, settings.baseUrl])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !settings.apiToken) {
+      return
+    }
+
+    function syncRecipesFromCache() {
+      const cacheEntry = getRecipeCache(settings)
+
+      if (cacheEntry) {
+        setRecipes(cacheEntry.recipes)
+      }
+    }
+
+    window.addEventListener(RECIPE_CACHE_UPDATED_EVENT, syncRecipesFromCache)
+
+    return () => {
+      window.removeEventListener(RECIPE_CACHE_UPDATED_EVENT, syncRecipesFromCache)
     }
   }, [settings.apiToken, settings.baseUrl])
 

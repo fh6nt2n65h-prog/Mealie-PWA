@@ -132,6 +132,51 @@ export function buildRemindersShortcutUrl(items: ShoppingListItem[]) {
   return `shortcuts://run-shortcut?${params.toString()}`
 }
 
+const IGNORED_INGREDIENT_KEYWORDS = new Set([
+  'and', 'the', 'with', 'from', 'into', 'until', 'fresh', 'large', 'small', 'medium', 'about', 'roughly', 'more', 'less',
+  'taste', 'plus', 'optional', 'divided', 'needed', 'recipe', 'ingredient', 'ingredients'
+])
+
+function normalizeIngredientKeywordSource(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function addIngredientKeywords(target: Set<string>, value?: string | null) {
+  if (!value) {
+    return
+  }
+
+  const normalized = normalizeIngredientKeywordSource(value)
+
+  if (!normalized) {
+    return
+  }
+
+  const words = normalized
+    .split(/[\s-]+/)
+    .filter((word) => word.length > 2 && !/^\d+$/.test(word) && !IGNORED_INGREDIENT_KEYWORDS.has(word))
+
+  if (words.length === 0) {
+    return
+  }
+
+  if (words.length <= 4) {
+    target.add(words.join(' '))
+  }
+
+  if (words.length >= 2) {
+    target.add(words.slice(-2).join(' '))
+  }
+
+  words.forEach((word) => {
+    target.add(word)
+  })
+}
+
 export function getIngredientDisplayText(ingredient: RecipeIngredient): string {
   const parts: string[] = []
 
@@ -145,29 +190,23 @@ export function getIngredientDisplayText(ingredient: RecipeIngredient): string {
     parts.push(ingredient.unit.name)
   }
 
-  if (ingredient.food?.name) {
-    parts.push(ingredient.food.name)
+  const label = ingredient.food?.name || ingredient.display || ingredient.note || ingredient.title || ingredient.originalText
+
+  if (label) {
+    parts.push(label)
   }
 
   return parts.join(' ').trim()
 }
 
 export function extractIngredientKeywords(ingredient: RecipeIngredient): string[] {
-  const keywords: string[] = []
+  const keywords = new Set<string>()
 
-  if (ingredient.food?.name) {
-    const foodName = ingredient.food.name.trim().toLowerCase()
-    keywords.push(foodName)
+  addIngredientKeywords(keywords, ingredient.food?.name)
+  addIngredientKeywords(keywords, ingredient.note)
+  addIngredientKeywords(keywords, ingredient.display)
+  addIngredientKeywords(keywords, ingredient.title)
+  addIngredientKeywords(keywords, ingredient.originalText)
 
-    // Extract multi-word ingredient keywords (e.g., "all-purpose" from "all-purpose flour")
-    const words = foodName.split(/[\s\-]+/)
-    if (words.length > 1) {
-      // Add the last word (e.g., "flour" from "all-purpose flour")
-      keywords.push(words[words.length - 1])
-      // Add the first word (e.g., "all" from "all-purpose flour")
-      keywords.push(words[0])
-    }
-  }
-
-  return [...new Set(keywords)].filter((k) => k.length > 0)
+  return Array.from(keywords)
 }
