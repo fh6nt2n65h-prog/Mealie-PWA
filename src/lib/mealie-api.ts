@@ -10,7 +10,6 @@ import type {
   ShoppingList,
   ShoppingListItem,
   ShoppingListSummary,
-  UpdateRecipeInput,
   UpdateMealPlanEntryInput,
   UserProfile
 } from '@/types/mealie'
@@ -219,7 +218,7 @@ export class MealieApi {
     })
   }
 
-  async updateRecipe(slug: string, payload: UpdateRecipeInput) {
+  async updateRecipe(slug: string, payload: Recipe) {
     return this.request<Recipe>(`/recipes/${encodeURIComponent(slug)}`, {
       method: 'PUT',
       body: JSON.stringify(payload)

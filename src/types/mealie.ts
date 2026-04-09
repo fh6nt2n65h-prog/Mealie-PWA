@@ -87,17 +87,6 @@ export type Recipe = RecipeSummary & {
   orgURL?: string | null
 }
 
-export type UpdateRecipeInput = {
-  name?: string | null
-  description?: string | null
-  prepTime?: string | null
-  cookTime?: string | null
-  totalTime?: string | null
-  recipeServings?: number
-  recipeIngredient?: RecipeIngredient[]
-  recipeInstructions?: RecipeStep[] | null
-}
-
 export type CreateRecipeInput = {
   name: string
 }

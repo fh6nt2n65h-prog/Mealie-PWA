@@ -296,6 +296,7 @@ export function RecipeDetailPage() {
     try {
       const api = new MealieApi(settings)
       const payload = {
+        ...recipe,
         name: editDraft.name,
         description: editDraft.description || null,
         prepTime: editDraft.prepTime || null,
@@ -391,9 +392,9 @@ export function RecipeDetailPage() {
         Back to recipes
       </Link>
 
-      <section className="overflow-hidden rounded-card border border-taupe/70 bg-parchment shadow-paper">
+      <section className="rounded-card border border-taupe/70 bg-parchment shadow-paper">
         {image ? (
-          <div className="bg-oat p-2 sm:p-3">
+          <div className="overflow-hidden rounded-t-card bg-oat p-2 sm:p-3">
             <img src={image} alt={recipe.name || 'Recipe'} className="aspect-[4/5] w-full rounded-[1.65rem] object-cover sm:aspect-[5/4]" />
           </div>
         ) : null}
@@ -409,9 +410,10 @@ export function RecipeDetailPage() {
             <p className="max-w-2xl text-sm leading-7 text-oliveGray">{recipe.description || 'A recipe collected into your private cooking journal.'}</p>
           </div>
 
-          <div ref={buttonsRowRef} className="flex flex-wrap gap-2.5">
+          <div ref={buttonsRowRef} className="space-y-2">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-oliveGray">Servings</p>
+            <div className="flex items-center gap-2.5">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-taupe bg-cream px-1.5 py-1 text-xs font-semibold text-ink">
-              <span className="px-1.5 text-[0.65rem] uppercase tracking-[0.16em] text-oliveGray">Servings</span>
               <button type="button" onClick={() => setServings((s) => Math.max(1, s - 1))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
                 <Minus className="h-3 w-3" />
               </button>
@@ -440,7 +442,7 @@ export function RecipeDetailPage() {
               </button>
 
               {actionsMenuOpen && (
-                <div className="absolute right-0 top-12 z-20 w-44 rounded-[1rem] border border-taupe/70 bg-parchment p-1.5 shadow-paper">
+                <div className="absolute right-0 bottom-full z-50 mb-2 w-44 rounded-[1rem] border border-taupe/70 bg-parchment p-1.5 shadow-paper">
                   <button
                     type="button"
                     onClick={openEditDialog}
@@ -463,6 +465,7 @@ export function RecipeDetailPage() {
                   </button>
                 </div>
               )}
+            </div>
             </div>
           </div>
 
