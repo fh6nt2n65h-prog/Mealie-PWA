@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
+import { Link } from 'react-router-dom'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { CreateMealPlanEntryInput, MealPlanEntry, PlanEntryType, RecipeSummary, UpdateMealPlanEntryInput } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
@@ -438,9 +439,18 @@ export function MealPlanPage() {
                             {mealEntries.map((entry) => (
                               <li key={entry.id} className="rounded-[1rem] bg-parchment px-4 py-3">
                                 <div className="flex items-start justify-between gap-4">
-                                  <div>
-                                    <p className="font-display text-2xl tracking-[-0.03em] text-ink">{entry.recipe?.name || entry.title || 'Planned item'}</p>
-                                    {!entry.recipe && entry.text && <p className="mt-1 text-sm leading-6 text-oliveGray">{entry.text}</p>}
+                                  <div className="min-w-0 flex-1">
+                                    {entry.recipe?.slug ? (
+                                      <Link
+                                        to={`/recipes/${entry.recipe.slug}`}
+                                        className="block font-display text-xl tracking-[-0.03em] text-ink hover:underline"
+                                      >
+                                        {entry.recipe.name || 'Planned item'}
+                                      </Link>
+                                    ) : (
+                                      <p className="font-display text-xl tracking-[-0.03em] text-ink">{entry.title || 'Planned item'}</p>
+                                    )}
+                                    {!entry.recipe && entry.text && <p className="mt-0.5 text-sm leading-5 text-oliveGray">{entry.text}</p>}
                                   </div>
 
                                   <div className="flex gap-2">

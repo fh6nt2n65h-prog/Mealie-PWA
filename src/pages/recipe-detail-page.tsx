@@ -23,7 +23,7 @@ export function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [scale, setScale] = useState(1)
+  const [servings, setServings] = useState(1)
   const [cookMode, setCookMode] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -45,6 +45,7 @@ export function RecipeDetailPage() {
 
         if (!cancelled) {
           setRecipe(detail)
+          setServings(detail.recipeServings || 1)
           upsertRecipeCacheEntry(settings, detail)
         }
       } catch (loadError) {
@@ -127,11 +128,11 @@ export function RecipeDetailPage() {
           <div className="flex flex-wrap gap-2.5">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-taupe bg-cream px-1.5 py-1 text-xs font-semibold text-ink">
               <span className="px-1.5 text-[0.65rem] uppercase tracking-[0.16em] text-oliveGray">Servings</span>
-              <button type="button" onClick={() => setScale((current) => Math.max(0.5, current - 0.5))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
+              <button type="button" onClick={() => setServings((s) => Math.max(1, s - 1))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
                 <Minus className="h-3 w-3" />
               </button>
-              <span className="min-w-[2rem] text-center text-xs">{scale}x</span>
-              <button type="button" onClick={() => setScale((current) => Math.min(4, current + 0.5))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
+              <span className="min-w-[2rem] text-center text-xs">{servings}</span>
+              <button type="button" onClick={() => setServings((s) => Math.min(50, s + 1))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
                 <Plus className="h-3 w-3" />
               </button>
             </div>
@@ -163,7 +164,8 @@ export function RecipeDetailPage() {
           <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Ingredients</h3>
           <ul className="mt-4 space-y-3">
             {recipe.recipeIngredient.map((ingredient, index) => {
-              const scaledValue = scaleQuantity(ingredient.quantity, scale)
+              const baseServings = recipe.recipeServings || 1
+              const scaledValue = scaleQuantity(ingredient.quantity, servings / baseServings)
 
               return (
                 <li key={`${ingredient.food?.name || ingredient.display || 'ingredient'}-${index}`} className="rounded-[1.2rem] bg-parchment px-4 py-2 shadow-paper">
@@ -172,7 +174,7 @@ export function RecipeDetailPage() {
                     {ingredient.unit?.abbreviation || ingredient.unit?.name ? `${ingredient.unit?.abbreviation || ingredient.unit?.name} ` : ''}
                     {ingredient.food?.name || ingredient.display || ingredient.originalText || 'Ingredient'}
                   </p>
-                  {ingredient.note && <p className="mt-0.5 line-clamp-1 text-xs leading-5 text-oliveGray">{ingredient.note}</p>}
+                  {ingredient.note && <p className="mt-0 line-clamp-1 text-xs leading-4 text-oliveGray">{ingredient.note}</p>}
                 </li>
               )
             })}
