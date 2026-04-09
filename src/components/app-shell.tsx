@@ -32,12 +32,12 @@ function AppShellFrame({ children }: { children: ReactNode }) {
     <div className="mx-auto flex h-[100dvh] max-w-[880px] flex-col overflow-hidden bg-halo bg-[length:100%_100%] px-3 pb-2 pt-3 sm:px-5 sm:pt-5">
       <div className="app-shell-frame flex h-full flex-col overflow-hidden rounded-shell border border-taupe/70 bg-cream/95 shadow-paper ring-1 ring-white/70">
         <header className="safe-top border-b border-b-taupe/70 bg-wash px-5 pb-3 pt-4 sm:px-7 sm:pb-4 sm:pt-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="max-w-[32rem] animate-rise">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.32em] text-oliveGray">{dayjs().format('dddd, MMMM D')}</p>
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0 flex-1 max-w-[32rem] animate-rise">
+              <p className="truncate whitespace-nowrap text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">{dayjs().format('dddd, MMMM D')}</p>
               <h1 className="mt-2 font-display text-[2.35rem] leading-none tracking-[-0.03em] text-ink sm:text-[3.25rem]">{resolveTitle(location.pathname)}</h1>
             </div>
-            {slots.sideContent && <div className="flex min-w-0 items-center justify-end gap-2 self-end">{slots.sideContent}</div>}
+            {slots.sideContent && <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 self-end">{slots.sideContent}</div>}
           </div>
 
           {slots.bottomContent && <div className="mt-3">{slots.bottomContent}</div>}

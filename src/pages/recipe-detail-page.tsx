@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown01, CookingPot, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
-import type { ParsedIngredientResult, Recipe, RecipeIngredient } from '@/types/mealie'
+import { ArrowDown01, CookingPot, EllipsisVertical, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
+import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -11,24 +11,6 @@ import { EmptyState } from '@/components/empty-state'
 import { removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
-
-type EditableParsedIngredient = {
-  raw: string
-  quantity: string
-  unit: string
-  food: string
-  note: string
-}
-
-function toEditableIngredient(raw: string, parsed?: ParsedIngredientResult | null): EditableParsedIngredient {
-  return {
-    raw,
-    quantity: parsed?.quantity === null || parsed?.quantity === undefined ? '' : String(parsed.quantity),
-    unit: parsed?.unit?.abbreviation || parsed?.unit?.name || '',
-    food: parsed?.food?.name || '',
-    note: parsed?.note || ''
-  }
-}
 
 // ---------- recipe edit types ----------
 
@@ -102,12 +84,8 @@ export function RecipeDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [buttonsInView, setButtonsInView] = useState(true)
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
   const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'done' | 'error'>('idle')
-  const [parseSheetOpen, setParseSheetOpen] = useState(false)
-  const [parseLoading, setParseLoading] = useState(false)
-  const [parseError, setParseError] = useState('')
-  const [parseSourceLabel, setParseSourceLabel] = useState('Ingredient')
-  const [parseDraft, setParseDraft] = useState<EditableParsedIngredient>({ raw: '', quantity: '', unit: '', food: '', note: '' })
 
   // edit sheet
   const [editOpen, setEditOpen] = useState(false)
@@ -119,7 +97,7 @@ export function RecipeDetailPage() {
   const [convertStatus, setConvertStatus] = useState<{ convertedCount: number; skippedCount: number; skippedNames: string[] } | null>(null)
 
   const buttonsRowRef = useRef<HTMLDivElement>(null)
-  const ingredientLongPressTimerRef = useRef<number | null>(null)
+  const actionsMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -181,13 +159,23 @@ export function RecipeDetailPage() {
   }, [recipe])
 
   useEffect(() => {
-    return () => {
-      if (ingredientLongPressTimerRef.current !== null) {
-        window.clearTimeout(ingredientLongPressTimerRef.current)
-        ingredientLongPressTimerRef.current = null
+    if (!actionsMenuOpen) {
+      return
+    }
+
+    function handleOutsideClick(event: MouseEvent) {
+      if (!actionsMenuRef.current) {
+        return
+      }
+
+      if (!actionsMenuRef.current.contains(event.target as Node)) {
+        setActionsMenuOpen(false)
       }
     }
-  }, [])
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [actionsMenuOpen])
 
   if (loading) {
     return <EmptyState title="Loading recipe" description="Gathering ingredients, method, and imagery from Mealie." />
@@ -225,64 +213,12 @@ export function RecipeDetailPage() {
     }
   }
 
-  async function loadParsedIngredient(rawText: string) {
-    const trimmed = rawText.trim()
-
-    if (!trimmed || !settings.apiToken) {
-      return
-    }
-
-    setParseLoading(true)
-    setParseError('')
-
-    try {
-      const api = new MealieApi(settings)
-      const parsed = await api.parseIngredient(trimmed)
-      setParseDraft(toEditableIngredient(trimmed, parsed))
-    } catch (parseLoadError) {
-      setParseError(parseLoadError instanceof Error ? parseLoadError.message : 'Unable to parse this ingredient.')
-    } finally {
-      setParseLoading(false)
-    }
-  }
-
-  function cancelIngredientLongPress() {
-    if (ingredientLongPressTimerRef.current !== null) {
-      window.clearTimeout(ingredientLongPressTimerRef.current)
-      ingredientLongPressTimerRef.current = null
-    }
-  }
-
-  function openIngredientParse(ingredient: RecipeIngredient) {
-    const rawText = ingredient.display || ingredient.originalText || ingredient.food?.name || ''
-    const sourceLabel = ingredient.food?.name || ingredient.display || ingredient.originalText || 'Ingredient'
-
-    setParseSourceLabel(sourceLabel)
-    setParseDraft({
-      raw: rawText,
-      quantity: ingredient.quantity === null || ingredient.quantity === undefined ? '' : String(ingredient.quantity),
-      unit: ingredient.unit?.abbreviation || ingredient.unit?.name || '',
-      food: ingredient.food?.name || '',
-      note: ingredient.note || ''
-    })
-    setParseError('')
-    setParseSheetOpen(true)
-    void loadParsedIngredient(rawText)
-  }
-
-  function startIngredientLongPress(ingredient: RecipeIngredient) {
-    cancelIngredientLongPress()
-    ingredientLongPressTimerRef.current = window.setTimeout(() => {
-      ingredientLongPressTimerRef.current = null
-      openIngredientParse(ingredient)
-    }, 500)
-  }
-
   function openEditDialog() {
     if (!recipe) {
       return
     }
 
+    setActionsMenuOpen(false)
     setEditDraft(recipeToEditDraft(recipe))
     setEditError('')
     setConvertStatus(null)
@@ -385,10 +321,11 @@ export function RecipeDetailPage() {
           text: s.text,
         })),
       }
-      const updated = await api.updateRecipe(recipe.slug, payload)
-      setRecipe(updated)
-      setServings(updated.recipeServings || 1)
-      upsertRecipeCacheEntry(settings, updated)
+      await api.updateRecipe(recipe.slug, payload)
+      const refreshed = await api.getRecipe(recipe.slug)
+      setRecipe(refreshed)
+      setServings(refreshed.recipeServings || 1)
+      upsertRecipeCacheEntry(settings, refreshed)
       setEditOpen(false)
     } catch (saveErr) {
       setEditError(saveErr instanceof Error ? saveErr.message : 'Unable to save recipe changes.')
@@ -491,23 +428,42 @@ export function RecipeDetailPage() {
               <CookingPot className="h-3.5 w-3.5" />
               {cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
             </button>
-            <button
-              type="button"
-              onClick={openEditDialog}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
-              aria-label="Edit recipe"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirmDeleteOpen(true)}
-              disabled={deleting}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta disabled:cursor-not-allowed disabled:opacity-60"
-              aria-label="Delete recipe"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            <div ref={actionsMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setActionsMenuOpen((open) => !open)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
+                aria-label="Recipe actions"
+                aria-expanded={actionsMenuOpen}
+              >
+                <EllipsisVertical className="h-4 w-4" />
+              </button>
+
+              {actionsMenuOpen && (
+                <div className="absolute right-0 top-12 z-20 w-44 rounded-[1rem] border border-taupe/70 bg-parchment p-1.5 shadow-paper">
+                  <button
+                    type="button"
+                    onClick={openEditDialog}
+                    className="flex w-full items-center gap-2 rounded-[0.8rem] px-3 py-2 text-left text-sm font-semibold text-ink hover:bg-oat/60"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit recipe
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActionsMenuOpen(false)
+                      setConfirmDeleteOpen(true)
+                    }}
+                    disabled={deleting}
+                    className="flex w-full items-center gap-2 rounded-[0.8rem] px-3 py-2 text-left text-sm font-semibold text-terracotta hover:bg-terracotta/10 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete recipe
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {error && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{error}</p>}
@@ -534,7 +490,6 @@ export function RecipeDetailPage() {
               </button>
             )}
           </div>
-          <p className="mt-3 text-xs text-oliveGray">Long press an ingredient to parse and edit it.</p>
           <ul className="mt-4 space-y-3">
             {recipe.recipeIngredient.map((ingredient, index) => {
               const baseServings = recipe.recipeServings || 1
@@ -544,16 +499,6 @@ export function RecipeDetailPage() {
                 <li
                   key={`${ingredient.food?.name || ingredient.display || 'ingredient'}-${index}`}
                   className="rounded-[1.2rem] bg-parchment px-4 py-2 shadow-paper"
-                  onMouseDown={() => startIngredientLongPress(ingredient)}
-                  onMouseUp={cancelIngredientLongPress}
-                  onMouseLeave={cancelIngredientLongPress}
-                  onTouchStart={() => startIngredientLongPress(ingredient)}
-                  onTouchEnd={cancelIngredientLongPress}
-                  onTouchCancel={cancelIngredientLongPress}
-                  onContextMenu={(event) => {
-                    event.preventDefault()
-                    openIngredientParse(ingredient)
-                  }}
                 >
                   <p className="text-sm font-semibold leading-snug text-ink">
                     {scaledValue !== null ? `${scaledValue} ` : ''}
@@ -582,98 +527,6 @@ export function RecipeDetailPage() {
           </ol>
         </article>
       </section>
-
-      <DialogSheet
-        open={parseSheetOpen}
-        title="Parsed ingredient"
-        description={parseSourceLabel}
-        onClose={() => {
-          if (!parseLoading) {
-            setParseSheetOpen(false)
-            setParseError('')
-          }
-        }}
-        footer={
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setParseSheetOpen(false)}
-              disabled={parseLoading}
-              className="inline-flex items-center justify-center rounded-full border border-taupe bg-parchment px-5 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Done
-            </button>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-oliveGray">Edit the parsed fields below. Changes stay in-app.</p>
-            <button
-              type="button"
-              onClick={() => void loadParsedIngredient(parseDraft.raw)}
-              disabled={parseLoading || !parseDraft.raw.trim()}
-              className="inline-flex items-center justify-center rounded-full border border-taupe bg-cream px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {parseLoading ? 'Parsing…' : 'Re-parse'}
-            </button>
-          </div>
-
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-ink">Raw ingredient</span>
-            <input
-              value={parseDraft.raw}
-              onChange={(event) => setParseDraft((current) => ({ ...current, raw: event.target.value }))}
-              className="w-full rounded-[1.1rem] border border-taupe bg-cream px-4 py-2.5 text-sm text-ink outline-none"
-              placeholder="2 cups flour"
-            />
-          </label>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block space-y-1.5">
-              <span className="text-sm font-semibold text-ink">Quantity</span>
-              <input
-                value={parseDraft.quantity}
-                onChange={(event) => setParseDraft((current) => ({ ...current, quantity: event.target.value }))}
-                className="w-full rounded-[1.1rem] border border-taupe bg-cream px-4 py-2.5 text-sm text-ink outline-none"
-                placeholder="2"
-              />
-            </label>
-
-            <label className="block space-y-1.5">
-              <span className="text-sm font-semibold text-ink">Unit</span>
-              <input
-                value={parseDraft.unit}
-                onChange={(event) => setParseDraft((current) => ({ ...current, unit: event.target.value }))}
-                className="w-full rounded-[1.1rem] border border-taupe bg-cream px-4 py-2.5 text-sm text-ink outline-none"
-                placeholder="cups"
-              />
-            </label>
-          </div>
-
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-ink">Ingredient</span>
-            <input
-              value={parseDraft.food}
-              onChange={(event) => setParseDraft((current) => ({ ...current, food: event.target.value }))}
-              className="w-full rounded-[1.1rem] border border-taupe bg-cream px-4 py-2.5 text-sm text-ink outline-none"
-              placeholder="all-purpose flour"
-            />
-          </label>
-
-          <label className="block space-y-1.5">
-            <span className="text-sm font-semibold text-ink">Note</span>
-            <input
-              value={parseDraft.note}
-              onChange={(event) => setParseDraft((current) => ({ ...current, note: event.target.value }))}
-              className="w-full rounded-[1.1rem] border border-taupe bg-cream px-4 py-2.5 text-sm text-ink outline-none"
-              placeholder="sifted"
-            />
-          </label>
-
-          {parseError && <p className="rounded-[1.1rem] bg-terracotta/10 px-4 py-2.5 text-sm text-terracotta">{parseError}</p>}
-        </div>
-      </DialogSheet>
 
       {/* ── Recipe edit sheet ──────────────────────────────── */}
       <DialogSheet

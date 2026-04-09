@@ -5,12 +5,12 @@ import type {
   CreateRecipeInput,
   MealPlanEntry,
   Pagination,
-  ParsedIngredientResult,
   Recipe,
   RecipeSummary,
   ShoppingList,
   ShoppingListItem,
   ShoppingListSummary,
+  UpdateRecipeInput,
   UpdateMealPlanEntryInput,
   UserProfile
 } from '@/types/mealie'
@@ -219,9 +219,9 @@ export class MealieApi {
     })
   }
 
-  async updateRecipe(slug: string, payload: Partial<Recipe>) {
+  async updateRecipe(slug: string, payload: UpdateRecipeInput) {
     return this.request<Recipe>(`/recipes/${encodeURIComponent(slug)}`, {
-      method: 'PATCH',
+      method: 'PUT',
       body: JSON.stringify(payload)
     })
   }
@@ -232,12 +232,4 @@ export class MealieApi {
     })
   }
 
-  async parseIngredient(ingredient: string) {
-    const result = await this.request<ParsedIngredientResult | ParsedIngredientResult[]>('/parser/ingredient', {
-      method: 'POST',
-      body: JSON.stringify({ ingredient })
-    })
-
-    return Array.isArray(result) ? result[0] || {} : result
-  }
 }

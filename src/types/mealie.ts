@@ -43,26 +43,6 @@ export type IngredientFood = {
   name: string
 }
 
-export type ParsedIngredientUnit = {
-  id?: string | null
-  name: string
-  abbreviation?: string | null
-}
-
-export type ParsedIngredientFood = {
-  id?: string | null
-  name: string
-}
-
-export type ParsedIngredientResult = {
-  input?: string | null
-  quantity?: number | null
-  unit?: ParsedIngredientUnit | null
-  food?: ParsedIngredientFood | null
-  note?: string | null
-  confidence?: number | null
-}
-
 export type RecipeIngredient = {
   quantity?: number | null
   unit?: IngredientUnit | null
@@ -105,6 +85,17 @@ export type Recipe = RecipeSummary & {
   recipeIngredient: RecipeIngredient[]
   recipeInstructions?: RecipeStep[] | null
   orgURL?: string | null
+}
+
+export type UpdateRecipeInput = {
+  name?: string | null
+  description?: string | null
+  prepTime?: string | null
+  cookTime?: string | null
+  totalTime?: string | null
+  recipeServings?: number
+  recipeIngredient?: RecipeIngredient[]
+  recipeInstructions?: RecipeStep[] | null
 }
 
 export type CreateRecipeInput = {

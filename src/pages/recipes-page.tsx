@@ -434,9 +434,9 @@ export function RecipesPage() {
 
   useHeaderSlots({
     sideContent: settings.apiToken ? (
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
         <div
-          className={`flex min-w-0 items-center overflow-hidden rounded-full border border-taupe/70 bg-parchment shadow-paper transition-[width,padding] duration-200 ease-out ${isSearchOpen ? 'w-[min(32vw,8rem)] max-w-[8rem] px-2 py-1 sm:w-[10.5rem] sm:max-w-[10.5rem]' : 'w-10 p-0'}`}
+          className={`flex min-w-0 items-center overflow-hidden rounded-full border border-taupe/70 bg-parchment shadow-paper transition-[width,padding] duration-200 ease-out ${isSearchOpen ? 'w-[min(52vw,11.5rem)] max-w-[11.5rem] px-2 py-1 sm:w-[14rem] sm:max-w-[14rem]' : 'w-10 p-0'}`}
         >
           <button
             type="button"

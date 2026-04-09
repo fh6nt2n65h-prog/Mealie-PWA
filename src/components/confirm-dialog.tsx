@@ -50,7 +50,7 @@ export function ConfirmDialog({
         </div>
       }
     >
-      <p className="text-sm leading-6 text-oliveGray">{description || 'This action cannot be undone.'}</p>
+      {!description && <p className="text-sm leading-6 text-oliveGray">This action cannot be undone.</p>}
     </DialogSheet>
   )
 }
