@@ -11,6 +11,8 @@ type SwipeRecipeDeckProps = {
   baseUrl: string
   onSelect: (slug: string) => void
   onLongPress?: (recipe: Recipe) => void
+  favoriteIds?: Set<string>
+  onToggleFavorite?: (recipeId: string) => void
 }
 
 const slideVariants = {
@@ -21,7 +23,7 @@ const slideVariants = {
 
 const spring = { type: 'spring' as const, stiffness: 420, damping: 36, mass: 0.7 }
 
-export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl, onSelect, onLongPress }: SwipeRecipeDeckProps) {
+export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl, onSelect, onLongPress, favoriteIds, onToggleFavorite }: SwipeRecipeDeckProps) {
   const recipe = recipes[currentIndex]
   const directionRef = useRef(0)
   const count = recipes.length
@@ -66,7 +68,15 @@ export function SwipeRecipeDeck({ recipes, currentIndex, onChangeIndex, baseUrl,
           transition={spring}
           className="absolute inset-0"
         >
-          <RecipeCard recipe={recipe} baseUrl={baseUrl} onClick={() => onSelect(recipe.slug)} onLongPress={onLongPress ? () => onLongPress(recipe) : undefined} featured />
+          <RecipeCard
+            recipe={recipe}
+            baseUrl={baseUrl}
+            onClick={() => onSelect(recipe.slug)}
+            onLongPress={onLongPress ? () => onLongPress(recipe) : undefined}
+            isFavorite={recipe.id ? favoriteIds?.has(recipe.id) : false}
+            onToggleFavorite={recipe.id && onToggleFavorite ? () => onToggleFavorite(recipe.id!) : undefined}
+            featured
+          />
         </motion.div>
       </AnimatePresence>
     </div>

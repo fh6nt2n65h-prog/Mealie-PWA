@@ -79,3 +79,33 @@ export function saveMealPlanDensity(_density: MealPlanDensity) {
 
   window.localStorage.setItem(MEAL_PLAN_DENSITY_KEY, JSON.stringify('compact'))
 }
+
+function favoritesKey(settings: ApiSettings) {
+  return `mealie-journal.favorites.v1.${settings.baseUrl}`
+}
+
+export function loadFavorites(settings: ApiSettings): Set<string> {
+  const ids = readLocalStorage<string[]>(favoritesKey(settings), [])
+  return new Set(ids)
+}
+
+export function saveFavorites(settings: ApiSettings, ids: Set<string>) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.localStorage.setItem(favoritesKey(settings), JSON.stringify([...ids]))
+}
+
+export function toggleFavorite(settings: ApiSettings, recipeId: string): Set<string> {
+  const current = loadFavorites(settings)
+
+  if (current.has(recipeId)) {
+    current.delete(recipeId)
+  } else {
+    current.add(recipeId)
+  }
+
+  saveFavorites(settings, current)
+  return current
+}

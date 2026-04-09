@@ -219,6 +219,13 @@ export class MealieApi {
     })
   }
 
+  async updateRecipe(slug: string, payload: Partial<Recipe>) {
+    return this.request<Recipe>(`/recipes/${encodeURIComponent(slug)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload)
+    })
+  }
+
   async addRecipeToShoppingList(listId: string, recipeId: string) {
     return this.request(`/households/shopping/lists/${listId}/recipe/${recipeId}`, {
       method: 'POST'
