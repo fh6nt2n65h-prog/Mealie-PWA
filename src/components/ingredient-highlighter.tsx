@@ -88,6 +88,7 @@ function buildHighlightNodes(text: string, ingredients: RecipeIngredient[]): Hig
 export function IngredientHighlighter({ text, ingredients }: IngredientHighlighterProps) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const tooltipTimeoutRef = useRef<number | null>(null)
+  const rootRef = useRef<HTMLSpanElement | null>(null)
   const nodes = useMemo(() => buildHighlightNodes(text, ingredients), [text, ingredients])
 
   useEffect(() => {
@@ -100,16 +101,23 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
 
   function showTooltip(element: HTMLElement, ingredient: RecipeIngredient, id: string) {
     const rect = element.getBoundingClientRect()
+    const rootRect = rootRef.current?.getBoundingClientRect()
+
+    if (!rootRect) {
+      return
+    }
 
     if (tooltipTimeoutRef.current) {
       window.clearTimeout(tooltipTimeoutRef.current)
     }
 
+    const label = getIngredientDisplayText(ingredient) || 'Ingredient'
+
     setTooltip({
       id,
-      text: getIngredientDisplayText(ingredient),
-      x: rect.left,
-      y: rect.top
+      text: label,
+      x: rect.left - rootRect.left + rect.width / 2,
+      y: rect.top - rootRect.top
     })
 
     tooltipTimeoutRef.current = window.setTimeout(() => {
@@ -119,7 +127,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
   }
 
   return (
-    <span className="relative">
+    <span ref={rootRef} className="relative">
       {nodes.map((node, index) =>
         node.type === 'text' ? (
           <span key={index}>{node.value}</span>
@@ -127,8 +135,8 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
           <button
             key={node.id}
             type="button"
-            onMouseDown={(event) => event.preventDefault()}
             onClick={(event) => showTooltip(event.currentTarget, node.ingredient, node.id)}
+            onTouchStart={(event) => showTooltip(event.currentTarget, node.ingredient, node.id)}
             className={`inline rounded-[0.7rem] border border-transparent px-1.5 py-0.5 font-semibold text-terracotta transition-all duration-150 ${tooltip?.id === node.id ? 'bg-terracotta/14 text-ink shadow-insetPaper' : 'bg-terracotta/8 hover:bg-terracotta/12 active:bg-terracotta/16'}`}
           >
             {node.value}
@@ -143,10 +151,10 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             transition={{ duration: 0.15 }}
-            className="fixed z-50 rounded-[0.8rem] bg-ink px-2.5 py-1.5 text-xs font-semibold text-parchment shadow-paper"
+            className="pointer-events-none absolute z-40 -translate-x-1/2 -translate-y-[calc(100%+8px)] rounded-[0.8rem] bg-ink px-2.5 py-1.5 text-xs font-semibold text-parchment shadow-paper"
             style={{
-              left: `${Math.max(8, Math.min(tooltip.x, window.innerWidth - 140))}px`,
-              top: `${Math.max(8, tooltip.y - 40)}px`
+              left: `${tooltip.x}px`,
+              top: `${tooltip.y}px`
             }}
           >
             {tooltip.text}

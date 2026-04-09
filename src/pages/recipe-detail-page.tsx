@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
 import { IngredientHighlighter } from '@/components/ingredient-highlighter'
-import { invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
+import { getRecipeCache, invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
 
@@ -109,7 +109,16 @@ export function RecipeDetailPage() {
         return
       }
 
-      setLoading(true)
+      const cached = getRecipeCache(settings)?.recipes.find((candidate) => candidate.slug === slug) || null
+
+      if (cached) {
+        setRecipe(cached)
+        setServings(cached.recipeServings || 1)
+        setLoading(false)
+      } else {
+        setLoading(true)
+      }
+
       setError('')
 
       try {
