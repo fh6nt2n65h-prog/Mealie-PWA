@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { RecipeIngredient } from '@/types/mealie'
@@ -12,7 +12,7 @@ type IngredientHighlighterProps = {
 type TooltipState = {
   id: string
   text: string
-  x: number
+  rawX: number
   y: number
   duplicate: boolean
 }
@@ -100,6 +100,7 @@ function buildHighlightNodes(text: string, ingredients: RecipeIngredient[]): Hig
 export function IngredientHighlighter({ text, ingredients }: IngredientHighlighterProps) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const tooltipTimeoutRef = useRef<number | null>(null)
+  const tooltipElRef = useRef<HTMLDivElement>(null)
   const rootRef = useRef<HTMLSpanElement | null>(null)
   const nodes = useMemo(() => buildHighlightNodes(text, ingredients), [text, ingredients])
 
@@ -111,6 +112,18 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
     }
   }, [])
 
+  // After each tooltip change the element is in the DOM at opacity:0 (Framer initial).
+  // Measure actual rendered width, then clamp left so the tooltip never escapes the viewport.
+  // This all happens before the browser paints, so there is no visible flicker.
+  useLayoutEffect(() => {
+    const el = tooltipElRef.current
+    if (!el || !tooltip) return
+    const w = el.offsetWidth
+    const rawLeft = tooltip.rawX - w / 2
+    const clampedLeft = Math.max(8, Math.min(rawLeft, window.innerWidth - w - 8))
+    el.style.left = `${clampedLeft}px`
+  }, [tooltip])
+
   function showTooltip(element: HTMLElement, ingredient: RecipeIngredient, id: string, duplicate: boolean) {
     const rect = element.getBoundingClientRect()
 
@@ -119,16 +132,11 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
     }
 
     const label = getIngredientDisplayText(ingredient) || 'Ingredient'
-    const estimatedHalfWidth = 128
-    const clampedCenterX = Math.min(
-      Math.max(rect.left + rect.width / 2, estimatedHalfWidth + 12),
-      window.innerWidth - estimatedHalfWidth - 12
-    )
 
     setTooltip({
       id,
       text: label,
-      x: clampedCenterX,
+      rawX: rect.left + rect.width / 2,
       y: rect.top,
       duplicate,
     })
@@ -161,18 +169,19 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
         <AnimatePresence>
           {tooltip && (
             <motion.div
+              ref={tooltipElRef}
               key={tooltip.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.15 }}
-              className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
+              className="pointer-events-none fixed z-50 -translate-y-[calc(100%+10px)] rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
               style={{
-                left: `${tooltip.x}px`,
+                left: `${tooltip.rawX}px`,
                 top: `${tooltip.y}px`
               }}
             >
-              <p className="max-w-[min(19rem,calc(100vw-1.5rem))] min-w-[10rem] whitespace-normal break-words">{tooltip.text}</p>
+              <p className="max-w-[min(19rem,calc(100vw-1rem))] whitespace-nowrap">{tooltip.text}</p>
               {tooltip.duplicate ? <p className="mt-0.5 text-[0.7rem] italic text-parchment/75">Duplicate</p> : null}
             </motion.div>
           )}
