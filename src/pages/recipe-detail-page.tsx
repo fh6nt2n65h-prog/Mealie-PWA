@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowDown01, CookingPot, EllipsisVertical, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/empty-state'
 import { IngredientHighlighter } from '@/components/ingredient-highlighter'
 import { getRecipeCache, invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
-import { formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
+import { extractIngredientKeywords, formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
 
 // ---------- recipe edit types ----------
 
@@ -98,6 +98,51 @@ export function RecipeDetailPage() {
   const [convertStatus, setConvertStatus] = useState<{ convertedCount: number; skippedCount: number; skippedNames: string[] } | null>(null)
 
   const buttonsRowRef = useRef<HTMLDivElement>(null)
+
+  // Per-step ingredient lists: non-ambiguous ingredients are removed from later steps
+  // once they've been matched in an earlier step, to avoid redundant highlights.
+  const stepIngredients = useMemo(() => {
+    if (!recipe) return []
+    const ingredients = recipe.recipeIngredient || []
+    const instructions = recipe.recipeInstructions || []
+    if (!ingredients.length || !instructions.length) return instructions.map(() => ingredients)
+
+    // Build keyword → ingredients map
+    const ingredientMap = new Map<string, RecipeIngredient[]>()
+    ingredients.forEach((ingredient) => {
+      extractIngredientKeywords(ingredient).forEach((keyword) => {
+        const current = ingredientMap.get(keyword)
+        if (!current) {
+          ingredientMap.set(keyword, [ingredient])
+        } else if (!current.includes(ingredient)) {
+          current.push(ingredient)
+        }
+      })
+    })
+
+    // Only non-ambiguous keywords can cause an ingredient to be "used up"
+    const nonAmbiguousEntries: Array<{ keyword: string; ingredient: RecipeIngredient }> = []
+    ingredientMap.forEach((candidates, keyword) => {
+      if (candidates.length === 1) nonAmbiguousEntries.push({ keyword, ingredient: candidates[0] })
+    })
+
+    const usedIngredients = new Set<RecipeIngredient>()
+
+    return instructions.map((step) => {
+      // Available = all ingredients not yet "used up" (only non-ambiguous ones enter usedIngredients)
+      const available = ingredients.filter((ing) => !usedIngredients.has(ing))
+
+      // Mark non-ambiguous ingredients that appear in this step's text as used
+      for (const { keyword, ingredient } of nonAmbiguousEntries) {
+        if (usedIngredients.has(ingredient)) continue
+        const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        const regex = new RegExp(`\\b${escaped}\\b`, 'i')
+        if (regex.test(step.text)) usedIngredients.add(ingredient)
+      }
+
+      return available
+    })
+  }, [recipe])
   const actionsMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -536,7 +581,7 @@ export function RecipeDetailPage() {
                   {step.title && <h4 className="text-base font-semibold text-ink">{step.title}</h4>}
                   <p className={`mt-1 ${cookMode ? 'text-xl leading-9 text-ink' : 'text-sm leading-7 text-oliveGray'}`}>
                     {cookMode ? (
-                      <IngredientHighlighter text={step.text} ingredients={recipe.recipeIngredient} />
+                      <IngredientHighlighter text={step.text} ingredients={stepIngredients[index] ?? recipe.recipeIngredient} />
                     ) : (
                       step.text
                     )}

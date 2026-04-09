@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import type { RecipeIngredient } from '@/types/mealie'
 import { extractIngredientKeywords, getIngredientDisplayText } from '@/lib/utils'
@@ -156,29 +157,28 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
         )
       )}
 
-      <AnimatePresence>
-        {tooltip && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.15 }}
-            className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
-            style={{
-              left: `${tooltip.x}px`,
-              top: `${tooltip.y}px`
-            }}
-          >
-            <p className="max-w-[min(19rem,calc(100vw-1.5rem))] min-w-[10rem] whitespace-normal break-words">{tooltip.text}</p>
-            {tooltip.duplicate ? <p className="mt-0.5 text-[0.7rem] italic text-parchment/75">Duplicate</p> : null}
+      {createPortal(
+        <AnimatePresence>
+          {tooltip && (
             <motion.div
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+              key={tooltip.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.15 }}
+              className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+10px)] rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
+              style={{
+                left: `${tooltip.x}px`,
+                top: `${tooltip.y}px`
+              }}
+            >
+              <p className="max-w-[min(19rem,calc(100vw-1.5rem))] min-w-[10rem] whitespace-normal break-words">{tooltip.text}</p>
+              {tooltip.duplicate ? <p className="mt-0.5 text-[0.7rem] italic text-parchment/75">Duplicate</p> : null}
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </span>
   )
 }
