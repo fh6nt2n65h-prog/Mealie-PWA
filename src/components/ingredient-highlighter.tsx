@@ -101,6 +101,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const tooltipTimeoutRef = useRef<number | null>(null)
   const tooltipElRef = useRef<HTMLDivElement>(null)
+  const triggerElRef = useRef<HTMLElement | null>(null)
   const rootRef = useRef<HTMLSpanElement | null>(null)
   const nodes = useMemo(() => buildHighlightNodes(text, ingredients), [text, ingredients])
 
@@ -111,6 +112,23 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
       }
     }
   }, [])
+
+  // Re-measure trigger element position on scroll so the tooltip follows its word.
+  useEffect(() => {
+    if (!tooltip) return
+    const scrollEl = document.getElementById('app-scroll-root')
+    if (!scrollEl) return
+
+    function onScroll() {
+      const trigger = triggerElRef.current
+      if (!trigger) return
+      const rect = trigger.getBoundingClientRect()
+      setTooltip((prev) => prev ? { ...prev, rawX: rect.left + rect.width / 2, y: rect.top } : null)
+    }
+
+    scrollEl.addEventListener('scroll', onScroll, { passive: true })
+    return () => scrollEl.removeEventListener('scroll', onScroll)
+  }, [tooltip?.id])
 
   // After each tooltip change the element is in the DOM at opacity:0 (Framer initial).
   // Measure actual rendered width, then clamp left so the tooltip never escapes the viewport.
@@ -125,6 +143,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
   }, [tooltip])
 
   function showTooltip(element: HTMLElement, ingredient: RecipeIngredient, id: string, duplicate: boolean) {
+    triggerElRef.current = element
     const rect = element.getBoundingClientRect()
 
     if (tooltipTimeoutRef.current) {
@@ -171,10 +190,9 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
             <motion.div
               ref={tooltipElRef}
               key={tooltip.id}
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1, transition: { duration: 0.12 } }}
+              exit={{ opacity: 0, transition: { duration: 0.35, ease: 'easeOut' } }}
               className="pointer-events-none fixed z-50 -translate-y-[calc(100%+10px)] rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
               style={{
                 left: `${tooltip.rawX}px`,
