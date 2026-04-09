@@ -134,7 +134,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
       const trigger = triggerElRef.current
       const el = tooltipElRef.current
       const initPos = initialPosRef.current
-      if (!trigger || !el || !initPos) return
+      if (!trigger || !el || !initPos || !scrollEl) return
 
       const triggerRect = trigger.getBoundingClientRect()
       const scrollRect = scrollEl.getBoundingClientRect()
