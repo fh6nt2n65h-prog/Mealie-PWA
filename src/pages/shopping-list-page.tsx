@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Download, Trash2 } from 'lucide-react'
 import type { ShoppingList, ShoppingListItem, ShoppingListSummary } from '@/types/mealie'
+import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
 import { ShoppingItemRow } from '@/components/shopping-item-row'
@@ -124,49 +125,44 @@ export function ShoppingListPage() {
       setClearingAll(false)
     }
   }
+
+  useHeaderSlots({
+    sideContent: (
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={items.length === 0}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-oliveGray disabled:opacity-40"
+          aria-label="Export to Reminders"
+        >
+          <Download className="h-4 w-4" />
+        </button>
+
+        <AnimatePresence initial={false}>
+          {(items.length > 0 || clearingAll) && (
+            <motion.button
+              layout
+              type="button"
+              onClick={() => void handleClearAll()}
+              disabled={clearingAll}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ type: 'spring', bounce: 0.15, duration: 0.3 }}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-terracotta disabled:opacity-60"
+              aria-label="Clear all items"
+            >
+              <Trash2 className="h-4 w-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+      </div>
+    ),
+  })
+
   return (
     <div className="space-y-5 animate-rise">
-      <section className="space-y-4 rounded-card border border-taupe/70 bg-parchment px-5 py-5 shadow-paper sm:px-6">
-        <div className="flex items-center justify-between gap-3">
-          {shoppingList ? (
-            <p className="font-display text-2xl tracking-[-0.03em] text-ink leading-none">{shoppingList.name || 'Shopping List'}</p>
-          ) : (
-            <p className="font-display text-2xl tracking-[-0.03em] text-ink leading-none">Shopping List</p>
-          )}
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleExport}
-              disabled={items.length === 0}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe/60 bg-cream text-ink disabled:opacity-40"
-              aria-label="Export to Reminders"
-            >
-              <Download className="h-4 w-4" />
-            </button>
-
-            <AnimatePresence initial={false}>
-              {(items.length > 0 || clearingAll) && (
-                <motion.button
-                  layout
-                  type="button"
-                  onClick={() => void handleClearAll()}
-                  disabled={clearingAll}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ type: 'spring', bounce: 0.15, duration: 0.3 }}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/40 bg-terracotta/10 text-terracotta disabled:opacity-60"
-                  aria-label="Clear all items"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-      </section>
-
       {loading && <EmptyState title="Loading the list" description="Pulling your most recently updated shopping list from Mealie." />}
       {!loading && error && <EmptyState title="Shopping list unavailable" description={error} />}
       {!loading && !error && !shoppingList && <EmptyState title="No shopping list found" description="Create or update a list in Mealie, then refresh this page." />}
