@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { CreateMealPlanEntryInput, MealPlanEntry, PlanEntryType, RecipeSummary, UpdateMealPlanEntryInput } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
@@ -72,7 +71,6 @@ export function MealPlanPage() {
   const [editorError, setEditorError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
-  const [crumplingEntryIds, setCrumplingEntryIds] = useState<number[]>([])
   const [confirmDeleteEntryId, setConfirmDeleteEntryId] = useState<number | null>(null)
   const [recipeOptions, setRecipeOptions] = useState<RecipeSummary[]>([])
   const [recipeSearch, setRecipeSearch] = useState('')
@@ -341,18 +339,14 @@ export function MealPlanPage() {
     const entryId = confirmDeleteEntryId
     setConfirmDeleteEntryId(null)
     setDeletingId(entryId)
-    setCrumplingEntryIds((current) => (current.includes(entryId) ? current : [...current, entryId]))
 
     try {
-      await new Promise((resolve) => window.setTimeout(resolve, 220))
       const api = new MealieApi(settings)
       await api.deleteMealPlanEntry(entryId)
       setEntries((current) => current.filter((entry) => entry.id !== entryId))
     } catch (deleteError) {
-      setCrumplingEntryIds((current) => current.filter((id) => id !== entryId))
       setError(deleteError instanceof Error ? deleteError.message : 'Unable to delete that meal plan entry.')
     } finally {
-      setCrumplingEntryIds((current) => current.filter((id) => id !== entryId))
       setDeletingId(null)
     }
   }
@@ -456,69 +450,46 @@ export function MealPlanPage() {
                           <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{titleize(mealType)}</p>
 
                           <ul className="mt-2 space-y-2">
-                            <AnimatePresence initial={false}>
-                              {mealEntries.map((entry) => {
-                                const isCrumpling = crumplingEntryIds.includes(entry.id)
+                            {mealEntries.map((entry) => (
+                              <li key={entry.id} className="overflow-hidden rounded-[1rem] bg-parchment px-4 py-3">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="min-w-0 flex-1">
+                                    {entry.recipe?.slug ? (
+                                      <Link
+                                        to={`/recipes/${entry.recipe.slug}`}
+                                        className="-mx-2 -my-1 inline-flex max-w-full rounded-[0.9rem] px-2 py-1 font-display text-xl tracking-[-0.03em] text-ink transition-colors duration-150 hover:bg-oat/70 active:bg-oat"
+                                      >
+                                        {entry.recipe.name || 'Planned item'}
+                                      </Link>
+                                    ) : (
+                                      <p className="font-display text-xl tracking-[-0.03em] text-ink">{entry.title || 'Planned item'}</p>
+                                    )}
+                                    {!entry.recipe && entry.text && <p className="mt-0.5 text-sm leading-5 text-oliveGray">{entry.text}</p>}
+                                  </div>
 
-                                return !isCrumpling ? (
-                                  <motion.li
-                                    key={entry.id}
-                                    layout
-                                    className="overflow-hidden rounded-[1rem] bg-parchment px-4 py-3"
-                                    exit={{
-                                      opacity: 0,
-                                      scaleX: 0.9,
-                                      scaleY: 0.18,
-                                      rotate: -4,
-                                      y: 10,
-                                      filter: 'blur(6px)',
-                                      height: 0,
-                                      paddingTop: 0,
-                                      paddingBottom: 0,
-                                    }}
-                                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                                    style={{ transformOrigin: '50% 0%' }}
-                                  >
-                                    <div className="flex items-start justify-between gap-4">
-                                      <div className="min-w-0 flex-1">
-                                        {entry.recipe?.slug ? (
-                                          <Link
-                                            to={`/recipes/${entry.recipe.slug}`}
-                                            className="-mx-2 -my-1 inline-flex max-w-full rounded-[0.9rem] px-2 py-1 font-display text-xl tracking-[-0.03em] text-ink transition-colors duration-150 hover:bg-oat/70 active:bg-oat"
-                                          >
-                                            {entry.recipe.name || 'Planned item'}
-                                          </Link>
-                                        ) : (
-                                          <p className="font-display text-xl tracking-[-0.03em] text-ink">{entry.title || 'Planned item'}</p>
-                                        )}
-                                        {!entry.recipe && entry.text && <p className="mt-0.5 text-sm leading-5 text-oliveGray">{entry.text}</p>}
-                                      </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => openEditDialog(entry)}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
+                                      aria-label="Edit meal plan entry"
+                                    >
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleDeleteEntry(entry.id)}
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta"
+                                      aria-label="Delete meal plan entry"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
 
-                                      <div className="flex gap-2">
-                                        <button
-                                          type="button"
-                                          onClick={() => openEditDialog(entry)}
-                                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe bg-cream text-ink"
-                                          aria-label="Edit meal plan entry"
-                                        >
-                                          <Pencil className="h-3.5 w-3.5" />
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => void handleDeleteEntry(entry.id)}
-                                          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta"
-                                          aria-label="Delete meal plan entry"
-                                        >
-                                          <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
-                                      </div>
-                                    </div>
-
-                                    {deletingId === entry.id && <p className="mt-3 text-sm text-oliveGray">Deleting…</p>}
-                                  </motion.li>
-                                ) : null
-                              })}
-                            </AnimatePresence>
+                                {deletingId === entry.id && <p className="mt-3 text-sm text-oliveGray">Deleting…</p>}
+                              </li>
+                            ))}
                           </ul>
                         </article>
                       )

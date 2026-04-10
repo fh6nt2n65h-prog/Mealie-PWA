@@ -75,30 +75,6 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
   return Math.round(quantity * scale * 100) / 100
 }
 
-function AnimatedActionsIcon({ open }: { open: boolean }) {
-  return (
-    <span className="relative block h-4 w-4" aria-hidden="true">
-      {[
-        { closed: { x: 5, y: 1.5 }, open: { x: 1.5, y: 2.5 } },
-        { closed: { x: 5, y: 5.75 }, open: { x: 7.5, y: 5.75 } },
-        { closed: { x: 5, y: 10 }, open: { x: 1.5, y: 9 } },
-      ].map((dot, index) => (
-        <motion.span
-          key={index}
-          className="absolute h-1.5 w-1.5 rounded-full bg-current"
-          initial={false}
-          animate={{
-            x: open ? dot.open.x : dot.closed.x,
-            y: open ? dot.open.y : dot.closed.y,
-            scale: open ? [1, 1.12, 1] : 1,
-          }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-        />
-      ))}
-    </span>
-  )
-}
-
 export function RecipeDetailPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -327,9 +303,10 @@ export function RecipeDetailPage() {
   async function handleToggleFavorite() {
     if (!recipe?.id) return
     const nextFav = !isFavorite
+    favoritePulseControls.set({ scale: 1 })
     void favoritePulseControls.start({
-      scale: [1, 1.18, 0.92, 1],
-      transition: { duration: 0.24, times: [0, 0.35, 0.7, 1] },
+      scale: [1, 1.42, 0.84, 1.12, 1],
+      transition: { duration: 0.34, times: [0, 0.28, 0.56, 0.82, 1] },
     })
     setIsFavorite(nextFav)
     const stored = loadFavorites(settings)
@@ -517,7 +494,6 @@ export function RecipeDetailPage() {
     setError('')
 
     try {
-      await new Promise((resolve) => window.setTimeout(resolve, 220))
       const api = new MealieApi(settings)
       await api.deleteRecipe(recipe.slug)
       removeRecipeCacheEntry(settings, recipe.slug)
@@ -529,13 +505,7 @@ export function RecipeDetailPage() {
   }
 
   return (
-    <motion.div
-      className={`space-y-5 animate-rise ${cookMode ? 'pb-6' : ''}`}
-      initial={false}
-      animate={deleting ? { opacity: 0, scaleX: 0.93, scaleY: 0.84, y: 18, rotate: -2 } : { opacity: 1, scaleX: 1, scaleY: 1, y: 0, rotate: 0 }}
-      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
-      style={{ transformOrigin: '50% 8%' }}
-    >
+    <div className={`space-y-5 animate-rise ${cookMode ? 'pb-6' : ''}`}>
       {/* Sticky cook-mode shortcut — animates in when the buttons row scrolls out of view */}
       <div className="pointer-events-none sticky top-2 z-20 h-0 overflow-visible">
         <div className="flex justify-end">
@@ -583,7 +553,7 @@ export function RecipeDetailPage() {
 
         <div className="space-y-5 px-5 py-5 sm:px-7">
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-5 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-oliveGray">
+            <div className="flex flex-wrap gap-x-8 gap-y-2 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-oliveGray sm:gap-x-10">
               <span>{formatDuration(recipe.totalTime)}</span>
               <span>{recipe.recipeServings || 1} servings</span>
               {recipe.lastMade && <span>{formatRelativeCookedDate(recipe.lastMade)}</span>}
@@ -620,7 +590,11 @@ export function RecipeDetailPage() {
                 aria-label="Recipe actions"
                 aria-expanded={actionsMenuOpen}
               >
-                <AnimatedActionsIcon open={actionsMenuOpen} />
+                <span className="flex h-4 w-4 flex-col items-center justify-center gap-[3px]" aria-hidden="true">
+                  <span className="h-1 w-1 rounded-full bg-current" />
+                  <span className="h-1 w-1 rounded-full bg-current" />
+                  <span className="h-1 w-1 rounded-full bg-current" />
+                </span>
               </button>
 
               {actionsMenuOpen && (
@@ -862,6 +836,6 @@ export function RecipeDetailPage() {
         onCancel={() => setConfirmDeleteOpen(false)}
         onConfirm={() => void handleDeleteRecipe()}
       />
-    </motion.div>
+    </div>
   )
 }
