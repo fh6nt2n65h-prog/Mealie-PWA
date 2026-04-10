@@ -193,6 +193,12 @@ export class MealieApi {
     return this.request<ShoppingList>(`/households/shopping/lists/${listId}`)
   }
 
+  async deleteShoppingItem(itemId: string) {
+    return this.request<void>(`/households/shopping/items/${itemId}`, {
+      method: 'DELETE'
+    })
+  }
+
   async updateShoppingItem(itemId: string, item: ShoppingListItem) {
     return this.request(`/households/shopping/items/${itemId}`, {
       method: 'PUT',

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown01, Camera, CookingPot, EllipsisVertical, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown01, Camera, Check, CookingPot, EllipsisVertical, Heart, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/empty-state'
 import { IngredientHighlighter } from '@/components/ingredient-highlighter'
 import { getRecipeCache, invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
+import { loadFavorites, saveFavorites } from '@/lib/storage'
 import { extractIngredientKeywords, formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
 
 // ---------- recipe edit types ----------
@@ -86,7 +87,9 @@ export function RecipeDetailPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [buttonsInView, setButtonsInView] = useState(true)
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
-  const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'done' | 'error'>('idle')
+  const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'added' | 'error'>('idle')
+  const [isFavorite, setIsFavorite] = useState(false)
+  const [favoriteUserId, setFavoriteUserId] = useState<string | null>(null)
 
   // edit sheet
   const [editOpen, setEditOpen] = useState(false)
@@ -234,6 +237,24 @@ export function RecipeDetailPage() {
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [actionsMenuOpen])
 
+  useEffect(() => {
+    if (!settings.apiToken || !recipe?.id) return
+    const stored = loadFavorites(settings)
+    setIsFavorite(stored.has(recipe.id))
+    const api = new MealieApi(settings)
+    api.getCurrentUser()
+      .then((user) => {
+        setFavoriteUserId(user.id)
+        return api.getUserFavorites(user.id)
+      })
+      .then((result) => {
+        const serverFaves = new Set(result.ratings.filter((r) => r.isFavorite).map((r) => r.recipeId))
+        if (recipe?.id) setIsFavorite(serverFaves.has(recipe.id))
+        saveFavorites(settings, serverFaves)
+      })
+      .catch(() => {})
+  }, [recipe?.id, settings.apiToken, settings.baseUrl])
+
   if (loading) {
     return <EmptyState title="Loading recipe" description="Gathering ingredients, method, and imagery from Mealie." />
   }
@@ -262,11 +283,30 @@ export function RecipeDetailPage() {
       }
 
       await api.addRecipeToShoppingList(listId, recipe.id)
-      setListAddStatus('done')
-      window.setTimeout(() => setListAddStatus('idle'), 1800)
+      setListAddStatus('added')
     } catch {
       setListAddStatus('error')
       window.setTimeout(() => setListAddStatus('idle'), 2000)
+    }
+  }
+
+  async function handleToggleFavorite() {
+    if (!recipe?.id) return
+    const nextFav = !isFavorite
+    setIsFavorite(nextFav)
+    const stored = loadFavorites(settings)
+    const newSet = new Set(stored)
+    if (nextFav) newSet.add(recipe.id)
+    else newSet.delete(recipe.id)
+    saveFavorites(settings, newSet)
+    if (!favoriteUserId) return
+    const api = new MealieApi(settings)
+    try {
+      if (nextFav) await api.addFavorite(favoriteUserId, recipe.slug)
+      else await api.removeFavorite(favoriteUserId, recipe.slug)
+    } catch {
+      setIsFavorite(!nextFav)
+      saveFavorites(settings, stored)
     }
   }
 
@@ -382,9 +422,10 @@ export function RecipeDetailPage() {
           const qty = parseFloat(draft.quantity)
           return {
             ...original,
-            // Null originalText so Mealie doesn't re-parse stale raw text
-            // over the structured fields the user just edited.
+            // Clear both display and originalText so Mealie uses the structured
+            // fields (qty/unit/food) rather than re-parsing stale free text.
             originalText: null,
+            display: undefined,
             quantity: draft.quantity && !isNaN(qty) ? qty : null,
             unit: draft.unit ? { id: original?.unit?.id ?? null, name: draft.unit, abbreviation: draft.unit } : null,
             food: draft.food ? { id: original?.food?.id ?? null, name: draft.food } : null,
@@ -480,14 +521,22 @@ export function RecipeDetailPage() {
 
       <section className="rounded-card border border-taupe/70 bg-parchment shadow-paper">
         {image ? (
-          <div className="overflow-hidden rounded-t-card bg-oat p-2 sm:p-3">
+          <div className="relative overflow-hidden rounded-t-card bg-oat p-2 sm:p-3">
             <img src={image} alt={recipe.name || 'Recipe'} className="aspect-[4/5] w-full rounded-[1.65rem] object-cover sm:aspect-[5/4]" />
+            <button
+              type="button"
+              aria-label={isFavorite ? 'Remove from favourites' : 'Add to favourites'}
+              onClick={() => void handleToggleFavorite()}
+              className="absolute right-5 top-5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-parchment/80 backdrop-blur-sm shadow-paper"
+            >
+              <Heart className={`h-4 w-4 transition-colors ${isFavorite ? 'fill-terracotta/70 text-terracotta/70' : 'text-oliveGray'}`} />
+            </button>
           </div>
         ) : null}
 
         <div className="space-y-5 px-5 py-5 sm:px-7">
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-oliveGray">
+            <div className="flex flex-wrap gap-5 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-oliveGray">
               <span>{formatDuration(recipe.totalTime)}</span>
               <span>{recipe.recipeServings || 1} servings</span>
               {recipe.lastMade && <span>{formatRelativeCookedDate(recipe.lastMade)}</span>}
@@ -567,11 +616,11 @@ export function RecipeDetailPage() {
               <button
                 type="button"
                 onClick={() => void handleAddToShoppingList()}
-                disabled={listAddStatus === 'adding'}
+                disabled={listAddStatus === 'adding' || listAddStatus === 'added'}
                 className="inline-flex items-center gap-1 rounded-full bg-sage/20 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-olive transition-opacity disabled:opacity-60"
                 aria-label="Add all ingredients to shopping list"
               >
-                {listAddStatus === 'done' && 'Added!'}
+                {listAddStatus === 'added' && <><Check className="h-3.5 w-3.5" />Already added</>}
                 {listAddStatus === 'error' && 'No list'}
                 {(listAddStatus === 'idle' || listAddStatus === 'adding') && (
                   <><ListPlus className="h-3.5 w-3.5" />{listAddStatus === 'adding' ? 'Adding…' : 'Add all'}</>
@@ -631,10 +680,6 @@ export function RecipeDetailPage() {
         onClose={() => { if (!editSaving) { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); setImagePreviewUrl(null); setImageFile(null); setEditOpen(false) } }}
         footer={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving}
-              className="inline-flex items-center justify-center rounded-full border border-taupe bg-parchment px-5 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60">
-              Cancel
-            </button>
             <button type="button" onClick={() => void handleSaveEdit()} disabled={editSaving}
               className="inline-flex items-center justify-center rounded-full bg-olive px-5 py-3 text-sm font-semibold text-parchment disabled:cursor-not-allowed disabled:opacity-60">
               {editSaving ? 'Saving…' : 'Save recipe'}

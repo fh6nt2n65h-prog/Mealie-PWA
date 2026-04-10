@@ -113,8 +113,8 @@ export function hasImperialIngredients(ingredients: RecipeIngredient[]): boolean
   })
 }
 
-// Matches patterns like: 350°F  350 °F  350F  350 degrees F  350 degrees Fahrenheit
-const FAHRENHEIT_RE = /(\d+(?:\.\d+)?)\s*(?:°\s*F|degrees?\s+F(?:ahrenheit)?|°\s*Fahrenheit)\b/gi
+// Matches patterns like: 350°F  350 °F  350F  400F  350 degrees Fahrenheit
+const FAHRENHEIT_RE = /(\d+(?:\.\d+)?)\s*(?:°\s*F(?:ahrenheit)?|degrees?\s+F(?:ahrenheit)?|F(?:ahrenheit)?)\b/gi
 
 function fToC(f: number): number {
   return Math.round((f - 32) * 5 / 9)

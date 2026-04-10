@@ -354,7 +354,7 @@ export function MealPlanPage() {
 
   useHeaderSlots({
     bottomContent: settings.apiToken ? (
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {calendarDays.map((day) => {
           const hasEntries = (entriesByDate.get(day.key) || []).length > 0
           const isSelected = day.key === selectedDayKey
@@ -514,13 +514,6 @@ export function MealPlanPage() {
         }}
         footer={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => setEditorOpen(false)}
-              className="inline-flex items-center justify-center rounded-full border border-taupe bg-parchment px-5 py-3 text-sm font-semibold text-ink"
-            >
-              Cancel
-            </button>
             <button
               type="button"
               onClick={() => void handleSaveEntry()}

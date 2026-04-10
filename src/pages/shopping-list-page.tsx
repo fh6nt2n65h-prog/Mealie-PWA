@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download, ListChecks } from 'lucide-react'
+import { Download, ListChecks, Trash2 } from 'lucide-react'
 import type { ShoppingList, ShoppingListItem, ShoppingListSummary } from '@/types/mealie'
 import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
@@ -22,6 +22,7 @@ export function ShoppingListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [syncingIds, setSyncingIds] = useState<Record<string, boolean>>({})
+  const [clearingChecked, setClearingChecked] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -102,20 +103,49 @@ export function ShoppingListPage() {
     }
   }
 
+  async function handleClearChecked() {
+    if (clearingChecked) return
+    const toDelete = items.filter((item) => item.checked)
+    if (toDelete.length === 0) return
+
+    setClearingChecked(true)
+    setItems((current) => current.filter((item) => !item.checked))
+
+    try {
+      const api = new MealieApi(settings)
+      await Promise.all(toDelete.map((item) => api.deleteShoppingItem(item.id)))
+    } catch {
+      setItems((current) => [...current, ...toDelete])
+      setError('Unable to clear checked items.')
+    } finally {
+      setClearingChecked(false)
+    }
+  }
+
+  const checkedItems = items.filter((item) => item.checked)
   const uncheckedItems = items.filter((item) => !item.checked)
 
   return (
     <div className="space-y-5 animate-rise">
       <section className="space-y-4 rounded-card border border-taupe/70 bg-parchment px-5 py-5 shadow-paper sm:px-6">
-        <div className="flex justify-start sm:justify-end">
+        <div className="flex flex-wrap gap-3 justify-start sm:justify-end">
+          <button
+            type="button"
+            onClick={() => void handleClearChecked()}
+            disabled={clearingChecked || checkedItems.length === 0}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-terracotta/40 bg-terracotta/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-terracotta disabled:opacity-45"
+          >
+            <Trash2 className="h-4 w-4" />
+            {clearingChecked ? 'Clearing…' : 'Clear checked'}
+          </button>
           <button
             type="button"
             onClick={handleExport}
-            disabled={uncheckedItems.length === 0}
+            disabled={checkedItems.length === 0}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-olive px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-parchment disabled:opacity-45"
           >
             <Download className="h-4 w-4" />
-            Export to Reminders
+            Export checked to Reminders
           </button>
         </div>
 
@@ -126,7 +156,7 @@ export function ShoppingListPage() {
             </div>
             <div>
               <p className="font-display text-2xl tracking-[-0.03em] text-ink">{shoppingList.name || 'Latest list'}</p>
-              <p className="text-sm text-oliveGray">{uncheckedItems.length} unchecked items ready to export</p>
+              <p className="text-sm text-oliveGray">{uncheckedItems.length} remaining · {checkedItems.length} checked</p>
             </div>
           </div>
         )}

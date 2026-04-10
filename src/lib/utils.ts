@@ -119,7 +119,7 @@ export function getShoppingItemText(item: ShoppingListItem) {
 
 export function buildRemindersShortcutUrl(items: ShoppingListItem[]) {
   const payload = items
-    .filter((item) => !item.checked)
+    .filter((item) => item.checked)
     .map((item) => getShoppingItemText(item))
     .join('\n')
 
