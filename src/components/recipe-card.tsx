@@ -1,6 +1,6 @@
 import clsx from 'clsx'
-import { Heart } from 'lucide-react'
 import { useRef } from 'react'
+import { AnimatedHeartIcon } from '@/components/animated-heart-icon'
 import type { Recipe, RecipeSummary } from '@/types/mealie'
 import { formatDuration, getRecipeImageUrl } from '@/lib/utils'
 
@@ -102,9 +102,7 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, onToggleFavo
               onTouchStart={(e) => e.stopPropagation()}
               className="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-full bg-parchment/80 backdrop-blur-sm shadow-paper"
             >
-              <Heart
-                className={clsx('h-4 w-4 transition-colors', isFavorite ? 'fill-terracotta/70 text-terracotta/70' : 'text-oliveGray')}
-              />
+              <AnimatedHeartIcon active={isFavorite} className="h-4 w-4" />
             </button>
           )}
         </div>

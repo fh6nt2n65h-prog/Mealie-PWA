@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { AnimatePresence, motion, useAnimationControls } from 'framer-motion'
-import { ArrowDown01, Camera, Check, Heart, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ArrowDown01, Camera, Check, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
+import { AnimatedHeartIcon } from '@/components/animated-heart-icon'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
@@ -91,7 +92,6 @@ export function RecipeDetailPage() {
   const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'added' | 'alreadyAdded' | 'error'>('idle')
   const [isFavorite, setIsFavorite] = useState(false)
   const [favoriteUserId, setFavoriteUserId] = useState<string | null>(null)
-  const favoritePulseControls = useAnimationControls()
 
   // edit sheet
   const [editOpen, setEditOpen] = useState(false)
@@ -303,11 +303,6 @@ export function RecipeDetailPage() {
   async function handleToggleFavorite() {
     if (!recipe?.id) return
     const nextFav = !isFavorite
-    favoritePulseControls.set({ scale: 1 })
-    void favoritePulseControls.start({
-      scale: [1, 1.42, 0.84, 1.12, 1],
-      transition: { duration: 0.34, times: [0, 0.28, 0.56, 0.82, 1] },
-    })
     setIsFavorite(nextFav)
     const stored = loadFavorites(settings)
     const newSet = new Set(stored)
@@ -544,9 +539,7 @@ export function RecipeDetailPage() {
               onClick={() => void handleToggleFavorite()}
               className="absolute right-5 top-5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-parchment/80 backdrop-blur-sm shadow-paper"
             >
-              <motion.span animate={favoritePulseControls} className="inline-flex">
-                <Heart className={`h-4 w-4 transition-colors ${isFavorite ? 'fill-terracotta/70 text-terracotta/70' : 'text-oliveGray'}`} />
-              </motion.span>
+              <AnimatedHeartIcon active={isFavorite} className="h-4 w-4" />
             </button>
           </div>
         ) : null}
@@ -832,6 +825,7 @@ export function RecipeDetailPage() {
         title="Delete recipe"
         description={`Delete ${recipe.name || 'this recipe'} from Mealie?`}
         confirmLabel="Delete recipe"
+        showCancelButton={false}
         busy={deleting}
         onCancel={() => setConfirmDeleteOpen(false)}
         onConfirm={() => void handleDeleteRecipe()}

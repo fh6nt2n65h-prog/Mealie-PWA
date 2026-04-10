@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { useEffect, useRef, useState } from 'react'
+import { motion, useAnimationControls, useMotionValue, useTransform, animate } from 'framer-motion'
 import { Trash2 } from 'lucide-react'
 import type { ShoppingListItem } from '@/types/mealie'
 import { getShoppingItemText } from '@/lib/utils'
@@ -14,11 +14,34 @@ const DELETE_THRESHOLD = -72
 export function ShoppingItemRow({ item, onDelete }: ShoppingItemRowProps) {
   const x = useMotionValue(0)
   const [deleting, setDeleting] = useState(false)
-  const rowRef = useRef<HTMLDivElement>(null)
+  const deleteReadyRef = useRef(false)
+  const trashPulseControls = useAnimationControls()
 
   // Reveal the red trash background as user swipes left
   const trashOpacity = useTransform(x, [0, DELETE_THRESHOLD], [0, 1])
   const trashScale = useTransform(x, [0, DELETE_THRESHOLD], [0.6, 1])
+
+  useEffect(() => {
+    const unsubscribe = x.on('change', (latest) => {
+      const isReady = latest <= DELETE_THRESHOLD
+
+      if (isReady && !deleteReadyRef.current) {
+        deleteReadyRef.current = true
+        trashPulseControls.set({ scale: 1, rotate: 0 })
+        void trashPulseControls.start({
+          scale: [1, 1.28, 0.9, 1],
+          rotate: [0, -10, 6, 0],
+          transition: { duration: 0.28, times: [0, 0.35, 0.72, 1] }
+        })
+      }
+
+      if (!isReady) {
+        deleteReadyRef.current = false
+      }
+    })
+
+    return unsubscribe
+  }, [trashPulseControls, x])
 
   async function handleDragEnd() {
     if (deleting) return
@@ -34,14 +57,14 @@ export function ShoppingItemRow({ item, onDelete }: ShoppingItemRowProps) {
   }
 
   return (
-    <div ref={rowRef} className="relative overflow-hidden rounded-[1.35rem]">
+    <div className="relative overflow-hidden rounded-[1.35rem]">
       {/* Delete background */}
       <motion.div
         style={{ opacity: trashOpacity }}
         className="absolute inset-0 flex items-center justify-end rounded-[1.35rem] bg-terracotta px-5"
         aria-hidden
       >
-        <motion.div style={{ scale: trashScale }}>
+        <motion.div animate={trashPulseControls} style={{ scale: trashScale }}>
           <Trash2 className="h-5 w-5 text-parchment" />
         </motion.div>
       </motion.div>

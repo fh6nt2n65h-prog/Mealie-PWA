@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useAnimationControls } from 'framer-motion'
 import { Download, Trash2 } from 'lucide-react'
 import type { ShoppingList, ShoppingListItem, ShoppingListSummary } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
@@ -25,6 +25,7 @@ export function ShoppingListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [clearingAll, setClearingAll] = useState(false)
+  const clearPulseControls = useAnimationControls()
 
   useEffect(() => {
     let cancelled = false
@@ -144,7 +145,19 @@ export function ShoppingListPage() {
             <motion.button
               layout
               type="button"
-              onClick={() => void handleClearAll()}
+              onClick={() => {
+                if (items.length === 0 || clearingAll) {
+                  return
+                }
+
+                clearPulseControls.set({ scale: 1, rotate: 0 })
+                void clearPulseControls.start({
+                  scale: [1, 1.24, 0.92, 1],
+                  rotate: [0, -8, 5, 0],
+                  transition: { duration: 0.24, times: [0, 0.34, 0.68, 1] }
+                })
+                void handleClearAll()
+              }}
               disabled={clearingAll}
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -153,7 +166,9 @@ export function ShoppingListPage() {
               className="inline-flex h-10 w-10 items-center justify-center rounded-full text-terracotta disabled:opacity-60"
               aria-label="Clear all items"
             >
-              <Trash2 className="h-4 w-4" />
+              <motion.span animate={clearPulseControls} className="inline-flex">
+                <Trash2 className="h-4 w-4" />
+              </motion.span>
             </motion.button>
           )}
         </AnimatePresence>

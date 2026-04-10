@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { flushSync } from 'react-dom'
 import dayjs from 'dayjs'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowRight, CalendarPlus, Camera, Heart, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
+import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
+import { AnimatedHeartIcon } from '@/components/animated-heart-icon'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
 import { EmptyState } from '@/components/empty-state'
@@ -467,7 +468,7 @@ export function RecipesPage() {
           aria-label={showFavoritesOnly ? 'Show all recipes' : 'Show favorites only'}
           aria-pressed={showFavoritesOnly}
         >
-          <Heart className={`h-4 w-4 ${showFavoritesOnly ? 'fill-terracotta/70' : ''}`} />
+          <AnimatedHeartIcon active={showFavoritesOnly} className="h-4 w-4" />
         </button>
 
         <button
@@ -771,6 +772,7 @@ export function RecipesPage() {
         title="Delete recipe"
         description={`Delete ${selectedRecipe?.name || 'this recipe'} from Mealie?`}
         confirmLabel="Delete recipe"
+        showCancelButton={false}
         busy={actionBusy}
         onCancel={() => setConfirmDeleteOpen(false)}
         onConfirm={() => void handleDeleteFromActions()}
