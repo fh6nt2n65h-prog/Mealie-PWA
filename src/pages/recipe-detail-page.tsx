@@ -105,7 +105,7 @@ function AnimatedCookingPot({ open, className }: { open: boolean; className?: st
         strokeLinejoin="round"
         className="absolute inset-0 h-full w-full overflow-visible"
         style={{ transformOrigin: '50% 30%' }}
-        animate={{ y: open ? -8 : 0, rotate: open ? -14 : 0 }}
+        animate={{ y: open ? -4 : 0, rotate: open ? -8 : 0 }}
         transition={{ type: 'spring', stiffness: 140, damping: 10, mass: 0.7 }}
       >
         <path d="m4 8 16-4" />
@@ -115,7 +115,7 @@ function AnimatedCookingPot({ open, className }: { open: boolean; className?: st
       <motion.span
         aria-hidden="true"
         className="pointer-events-none absolute -top-1 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full"
-        animate={{ opacity: open ? 1 : 0, y: open ? -4 : 0, scale: open ? 1 : 0.6 }}
+        animate={{ opacity: open ? 1 : 0, y: open ? -2 : 0, scale: open ? 1 : 0.6 }}
         transition={{ duration: 0.18 }}
       >
         <span className="absolute left-0.5 top-0 h-2 w-[2px] rounded-full bg-current/75" />
