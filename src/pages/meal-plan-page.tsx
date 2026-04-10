@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import dayjs from 'dayjs'
 import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
 import type { CreateMealPlanEntryInput, MealPlanEntry, PlanEntryType, RecipeSummary, UpdateMealPlanEntryInput } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
@@ -72,6 +73,7 @@ export function MealPlanPage() {
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [confirmDeleteEntryId, setConfirmDeleteEntryId] = useState<number | null>(null)
+  const [deletePulseEntryId, setDeletePulseEntryId] = useState<number | null>(null)
   const [recipeOptions, setRecipeOptions] = useState<RecipeSummary[]>([])
   const [recipeSearch, setRecipeSearch] = useState('')
   const [loadingRecipeOptions, setLoadingRecipeOptions] = useState(false)
@@ -81,7 +83,21 @@ export function MealPlanPage() {
   const suppressDayJumpRef = useRef(false)
   const dayLongPressTimerRef = useRef<number | null>(null)
   const dayTouchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const deletePulseResetTimerRef = useRef<number | null>(null)
+  const deleteDialogOpenTimerRef = useRef<number | null>(null)
   const calendarDays = CALENDAR_DAYS
+
+  useEffect(() => {
+    return () => {
+      if (deletePulseResetTimerRef.current !== null) {
+        window.clearTimeout(deletePulseResetTimerRef.current)
+      }
+
+      if (deleteDialogOpenTimerRef.current !== null) {
+        window.clearTimeout(deleteDialogOpenTimerRef.current)
+      }
+    }
+  }, [])
 
   async function loadMealPlan(options?: { background?: boolean }) {
     if (!settings.apiToken) {
@@ -324,11 +340,29 @@ export function MealPlanPage() {
   }
 
   async function handleDeleteEntry(entryId: number) {
-    if (!settings.apiToken || deletingId === entryId) {
+    if (!settings.apiToken || deletingId === entryId || confirmDeleteEntryId !== null) {
       return
     }
 
-    setConfirmDeleteEntryId(entryId)
+    setDeletePulseEntryId(entryId)
+
+    if (deletePulseResetTimerRef.current !== null) {
+      window.clearTimeout(deletePulseResetTimerRef.current)
+    }
+
+    if (deleteDialogOpenTimerRef.current !== null) {
+      window.clearTimeout(deleteDialogOpenTimerRef.current)
+    }
+
+    deletePulseResetTimerRef.current = window.setTimeout(() => {
+      setDeletePulseEntryId((current) => (current === entryId ? null : current))
+      deletePulseResetTimerRef.current = null
+    }, 240)
+
+    deleteDialogOpenTimerRef.current = window.setTimeout(() => {
+      setConfirmDeleteEntryId(entryId)
+      deleteDialogOpenTimerRef.current = null
+    }, 120)
   }
 
   async function confirmDeleteEntry() {
@@ -482,7 +516,17 @@ export function MealPlanPage() {
                                       className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta"
                                       aria-label="Delete meal plan entry"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
+                                      <motion.span
+                                        initial={false}
+                                        animate={deletePulseEntryId === entry.id ? {
+                                          scale: [1, 1.24, 0.92, 1],
+                                          rotate: [0, -8, 5, 0]
+                                        } : { scale: 1, rotate: 0 }}
+                                        transition={{ duration: 0.24, times: [0, 0.34, 0.68, 1] }}
+                                        className="inline-flex"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </motion.span>
                                     </button>
                                   </div>
                                 </div>
@@ -524,6 +568,23 @@ export function MealPlanPage() {
         }
       >
         <div className="space-y-5">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setDraft((current) => ({ ...current, mode: 'recipe', title: '' }))}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold ${draft.mode === 'recipe' ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
+            >
+              Recipe
+            </button>
+            <button
+              type="button"
+              onClick={() => setDraft((current) => ({ ...current, mode: 'note', recipeId: '' }))}
+              className={`rounded-full border px-4 py-2 text-sm font-semibold ${draft.mode === 'note' ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
+            >
+              Note
+            </button>
+          </div>
+
           <label className="block space-y-2">
             <span className="text-sm font-semibold text-ink">Meal type</span>
             <div className="flex flex-wrap gap-2">
@@ -543,23 +604,6 @@ export function MealPlanPage() {
               })}
             </div>
           </label>
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setDraft((current) => ({ ...current, mode: 'recipe', title: '' }))}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold ${draft.mode === 'recipe' ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
-            >
-              Recipe
-            </button>
-            <button
-              type="button"
-              onClick={() => setDraft((current) => ({ ...current, mode: 'note', recipeId: '' }))}
-              className={`rounded-full border px-4 py-2 text-sm font-semibold ${draft.mode === 'note' ? 'border-transparent bg-ink text-parchment' : 'border-taupe bg-cream text-ink'}`}
-            >
-              Note
-            </button>
-          </div>
 
           {draft.mode === 'recipe' ? (
             <div className="space-y-3">

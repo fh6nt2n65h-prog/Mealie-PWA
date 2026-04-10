@@ -76,6 +76,34 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
   return Math.round(quantity * scale * 100) / 100
 }
 
+function AnimatedKebabIcon({ open }: { open: boolean }) {
+  const dots = [
+    { closed: { x: 6, y: 1.5 }, open: { x: 1.5, y: 6 } },
+    { closed: { x: 6, y: 6 }, open: { x: 6, y: 6 } },
+    { closed: { x: 6, y: 10.5 }, open: { x: 10.5, y: 6 } }
+  ]
+
+  return (
+    <motion.span
+      initial={false}
+      animate={{ scale: open ? [1, 1.06, 1] : 1 }}
+      transition={{ duration: 0.26, times: [0, 0.45, 1] }}
+      className="relative block h-4 w-4"
+      aria-hidden="true"
+    >
+      {dots.map((dot, index) => (
+        <motion.span
+          key={index}
+          className="absolute h-1 w-1 rounded-full bg-current"
+          initial={false}
+          animate={open ? dot.open : dot.closed}
+          transition={{ type: 'spring', stiffness: 420, damping: 28, mass: 0.65 }}
+        />
+      ))}
+    </motion.span>
+  )
+}
+
 export function RecipeDetailPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -583,11 +611,7 @@ export function RecipeDetailPage() {
                 aria-label="Recipe actions"
                 aria-expanded={actionsMenuOpen}
               >
-                <span className="flex h-4 w-4 flex-col items-center justify-center gap-[3px]" aria-hidden="true">
-                  <span className="h-1 w-1 rounded-full bg-current" />
-                  <span className="h-1 w-1 rounded-full bg-current" />
-                  <span className="h-1 w-1 rounded-full bg-current" />
-                </span>
+                <AnimatedKebabIcon open={actionsMenuOpen} />
               </button>
 
               {actionsMenuOpen && (

@@ -7,7 +7,7 @@ import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
 import { ShoppingItemRow } from '@/components/shopping-item-row'
 import { MealieApi } from '@/lib/mealie-api'
-import { clearAddedRecipes } from '@/lib/storage'
+import { clearAddedRecipes, loadAddedRecipes } from '@/lib/storage'
 import { buildRemindersShortcutUrl } from '@/lib/utils'
 
 function resolveActiveList(lists: ShoppingListSummary[]) {
@@ -25,7 +25,13 @@ export function ShoppingListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [clearingAll, setClearingAll] = useState(false)
+  const [hasTrackedRecipes, setHasTrackedRecipes] = useState(() => loadAddedRecipes(settings).size > 0)
+  const exportPulseControls = useAnimationControls()
   const clearPulseControls = useAnimationControls()
+
+  useEffect(() => {
+    setHasTrackedRecipes(loadAddedRecipes(settings).size > 0)
+  }, [settings.apiToken, settings.baseUrl])
 
   useEffect(() => {
     let cancelled = false
@@ -100,9 +106,16 @@ export function ShoppingListPage() {
   async function handleClearAll() {
     if (clearingAll) return
     const toDelete = [...items]
-    if (toDelete.length === 0) return
+
+    if (toDelete.length === 0) {
+      clearAddedRecipes(settings)
+      setHasTrackedRecipes(false)
+      setError('')
+      return
+    }
 
     setClearingAll(true)
+    setError('')
     setItems([])
 
     const api = new MealieApi(settings)
@@ -118,12 +131,13 @@ export function ShoppingListPage() {
 
     const remaining = toDelete.filter((item) => failedIds.has(item.id))
     setItems(remaining)
+    setClearingAll(false)
 
     if (remaining.length === 0) {
       clearAddedRecipes(settings)
+      setHasTrackedRecipes(false)
     } else {
       setError(`${failedIds.size} item${failedIds.size !== 1 ? 's' : ''} could not be removed.`)
-      setClearingAll(false)
     }
   }
 
@@ -132,16 +146,30 @@ export function ShoppingListPage() {
       <div className="flex items-center gap-2">
         <button
           type="button"
-          onClick={handleExport}
+          onClick={() => {
+            if (items.length === 0) {
+              return
+            }
+
+            exportPulseControls.set({ scale: 1, rotate: 0 })
+            void exportPulseControls.start({
+              scale: [1, 1.24, 0.92, 1],
+              rotate: [0, -8, 5, 0],
+              transition: { duration: 0.24, times: [0, 0.34, 0.68, 1] }
+            })
+            handleExport()
+          }}
           disabled={items.length === 0}
           className="inline-flex h-10 w-10 items-center justify-center rounded-full text-oliveGray disabled:opacity-40"
           aria-label="Export to Reminders"
         >
-          <Download className="h-4 w-4" />
+          <motion.span animate={exportPulseControls} className="inline-flex">
+            <Download className="h-5 w-5" />
+          </motion.span>
         </button>
 
         <AnimatePresence initial={false}>
-          {(items.length > 0 || clearingAll) && (
+          {(shoppingList || hasTrackedRecipes || items.length > 0 || clearingAll) && (
             <motion.button
               layout
               type="button"
@@ -167,7 +195,7 @@ export function ShoppingListPage() {
               aria-label="Clear all items"
             >
               <motion.span animate={clearPulseControls} className="inline-flex">
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5" />
               </motion.span>
             </motion.button>
           )}

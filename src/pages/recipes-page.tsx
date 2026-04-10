@@ -435,7 +435,7 @@ export function RecipesPage() {
             value={searchValue}
             onChange={(event) => setSearchValue(event.target.value)}
             onFocus={() => setIsSearchOpen(true)}
-            placeholder="Search recipes"
+            placeholder="Search..."
             inputMode="search"
             enterKeyHint="search"
             autoComplete="off"
