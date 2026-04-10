@@ -80,6 +80,7 @@ export function MealPlanPage() {
   const touchStartRef = useRef<number | null>(null)
   const suppressDayJumpRef = useRef(false)
   const dayLongPressTimerRef = useRef<number | null>(null)
+  const dayTouchStartRef = useRef<{ x: number; y: number } | null>(null)
   const calendarDays = CALENDAR_DAYS
 
   async function loadMealPlan(options?: { background?: boolean }) {
@@ -373,7 +374,14 @@ export function MealPlanPage() {
               onMouseDown={() => startDayLongPress(day.key)}
               onMouseUp={clearDayLongPress}
               onMouseLeave={clearDayLongPress}
-              onTouchStart={() => startDayLongPress(day.key)}
+              onTouchStart={(e) => { dayTouchStartRef.current = { x: e.touches[0]!.clientX, y: e.touches[0]!.clientY }; startDayLongPress(day.key) }}
+              onTouchMove={(e) => {
+                if (dayTouchStartRef.current) {
+                  const dx = e.touches[0]!.clientX - dayTouchStartRef.current.x
+                  const dy = e.touches[0]!.clientY - dayTouchStartRef.current.y
+                  if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clearDayLongPress()
+                }
+              }}
               onTouchEnd={clearDayLongPress}
               onTouchCancel={clearDayLongPress}
               onContextMenu={(event) => {

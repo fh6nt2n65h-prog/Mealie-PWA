@@ -226,6 +226,16 @@ export class MealieApi {
     })
   }
 
+  async uploadRecipeImage(slug: string, file: File, extension: string) {
+    const formData = new FormData()
+    formData.append('image', file)
+    formData.append('extension', extension)
+    return this.request<void>(`/recipes/${encodeURIComponent(slug)}/image`, {
+      method: 'PUT',
+      body: formData
+    })
+  }
+
   async addRecipeToShoppingList(listId: string, recipeId: string) {
     return this.request(`/households/shopping/lists/${listId}/recipe/${recipeId}`, {
       method: 'POST'

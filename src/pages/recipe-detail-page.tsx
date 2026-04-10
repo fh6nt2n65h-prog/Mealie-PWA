@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown01, CookingPot, EllipsisVertical, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown01, Camera, CookingPot, EllipsisVertical, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
@@ -96,6 +96,8 @@ export function RecipeDetailPage() {
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
   const [convertStatus, setConvertStatus] = useState<{ convertedCount: number; skippedCount: number; skippedNames: string[]; stepsConverted: number } | null>(null)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
 
   const buttonsRowRef = useRef<HTMLDivElement>(null)
 
@@ -277,7 +279,18 @@ export function RecipeDetailPage() {
     setEditDraft(recipeToEditDraft(recipe))
     setEditError('')
     setConvertStatus(null)
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    setImageFile(null)
+    setImagePreviewUrl(null)
     setEditOpen(true)
+  }
+
+  function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
+    setImageFile(file)
+    setImagePreviewUrl(URL.createObjectURL(file))
   }
 
   function setIngredientField(idx: number, field: keyof IngredientDraft, value: string) {
@@ -384,7 +397,15 @@ export function RecipeDetailPage() {
         })),
       }
       await api.updateRecipe(recipe.slug, payload)
-      const refreshed = await api.getRecipe(recipe.slug)
+      let refreshed = await api.getRecipe(recipe.slug)
+      if (imageFile) {
+        const ext = imageFile.name.split('.').pop()?.toLowerCase() || 'jpg'
+        await api.uploadRecipeImage(refreshed.slug, imageFile, ext)
+        refreshed = await api.getRecipe(refreshed.slug)
+        URL.revokeObjectURL(imagePreviewUrl ?? '')
+        setImageFile(null)
+        setImagePreviewUrl(null)
+      }
       setRecipe(refreshed)
       setServings(refreshed.recipeServings || 1)
       upsertRecipeCacheEntry(settings, refreshed)
@@ -604,7 +625,7 @@ export function RecipeDetailPage() {
         open={editOpen}
         title="Edit recipe"
         description={recipe.name || 'Untitled recipe'}
-        onClose={() => { if (!editSaving) setEditOpen(false) }}
+        onClose={() => { if (!editSaving) { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); setImagePreviewUrl(null); setImageFile(null); setEditOpen(false) } }}
         footer={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button type="button" onClick={() => setEditOpen(false)} disabled={editSaving}
@@ -619,6 +640,24 @@ export function RecipeDetailPage() {
         }
       >
         <div className="space-y-6">
+          <section className="space-y-3">
+            <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Photo</h4>
+            <div className="relative overflow-hidden rounded-[1.4rem] border border-taupe/60 bg-oat/40">
+              {(imagePreviewUrl || image) ? (
+                <img src={imagePreviewUrl || image || ''} alt="Recipe" className="aspect-[4/3] w-full object-cover" />
+              ) : (
+                <div className="flex aspect-[4/3] w-full items-center justify-center">
+                  <ImagePlus className="h-8 w-8 text-oliveGray/30" />
+                </div>
+              )}
+              <label className="absolute bottom-3 right-3 cursor-pointer inline-flex items-center gap-1.5 rounded-full bg-ink/75 px-3 py-2 text-xs font-semibold text-parchment backdrop-blur-sm">
+                <Camera className="h-3.5 w-3.5" />
+                {imagePreviewUrl ? 'Change photo' : image ? 'Replace photo' : 'Add photo'}
+                <input type="file" accept="image/*" className="sr-only" onChange={handleImageSelect} />
+              </label>
+            </div>
+          </section>
+
           <section className="space-y-3">
             <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Basic info</h4>
             <label className="block space-y-1.5">
