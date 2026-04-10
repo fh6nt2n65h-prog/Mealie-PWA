@@ -517,7 +517,7 @@ export function RecipeDetailPage() {
                   cookMode ? 'border border-taupe bg-cream text-ink' : 'bg-ink text-parchment'
                 }`}
               >
-                <ChefHat open={cookMode} className="h-4 w-4" />
+                <ChefHat open={cookMode} className="h-5 w-5" />
                 <span>{cookMode ? 'Exit Cook Mode' : 'Cook Mode'}</span>
               </motion.button>
             )}
@@ -571,7 +571,7 @@ export function RecipeDetailPage() {
               onClick={() => setCookMode((current) => !current)}
               className="inline-flex items-center gap-2 rounded-full bg-ink px-3.5 py-2.5 text-xs font-semibold text-parchment"
             >
-              <ChefHat open={cookMode} className="h-3.5 w-3.5" />
+              <ChefHat open={cookMode} className="h-4 w-4" />
               {cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
             </button>
             <div ref={actionsMenuRef} className="relative">
