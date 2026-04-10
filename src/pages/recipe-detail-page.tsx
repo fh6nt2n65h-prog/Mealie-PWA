@@ -382,10 +382,9 @@ export function RecipeDetailPage() {
           const qty = parseFloat(draft.quantity)
           return {
             ...original,
-            // Null originalText/display so Mealie doesn't re-parse stale raw text
+            // Null originalText so Mealie doesn't re-parse stale raw text
             // over the structured fields the user just edited.
             originalText: null,
-            display: null,
             quantity: draft.quantity && !isNaN(qty) ? qty : null,
             unit: draft.unit ? { id: original?.unit?.id ?? null, name: draft.unit, abbreviation: draft.unit } : null,
             food: draft.food ? { id: original?.food?.id ?? null, name: draft.food } : null,
