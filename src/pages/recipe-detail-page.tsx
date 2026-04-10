@@ -88,16 +88,17 @@ function AnimatedCookingPot({ open, className }: { open: boolean; className?: st
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      overflow="visible"
+      style={{ overflow: 'visible' }}
       className={className}
     >
       {/* Pot body — stays still */}
       <path d="M2 12h20" />
       <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" />
-      {/* Lid — lifts up when open (cook mode on) */}
+      {/* Lid — lifts and tilts when cook mode opens */}
       <motion.g
-        animate={{ y: open ? -3 : 0 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+        animate={{ y: open ? -7 : 0, rotate: open ? -8 : 0 }}
+        style={{ originX: '12px', originY: '6px' }}
+        transition={{ type: 'spring', stiffness: 180, damping: 12 }}
       >
         <path d="m4 8 16-4" />
         <path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8" />
