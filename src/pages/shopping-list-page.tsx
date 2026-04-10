@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Download, ListChecks } from 'lucide-react'
+import { Download, Trash2 } from 'lucide-react'
 import type { ShoppingList, ShoppingListItem, ShoppingListSummary } from '@/types/mealie'
 import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
@@ -23,7 +23,6 @@ export function ShoppingListPage() {
   const [items, setItems] = useState<ShoppingListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [syncingIds, setSyncingIds] = useState<Record<string, boolean>>({})
   const [clearingAll, setClearingAll] = useState(false)
 
   useEffect(() => {
@@ -77,31 +76,22 @@ export function ShoppingListPage() {
     }
   }, [settings])
 
-  async function handleToggle(item: ShoppingListItem) {
-    const nextItem = { ...item, checked: !item.checked }
-    setItems((currentItems) => currentItems.map((currentItem) => (currentItem.id === item.id ? nextItem : currentItem)))
-    setSyncingIds((current) => ({ ...current, [item.id]: true }))
-
-    try {
-      const api = new MealieApi(settings)
-      await api.updateShoppingItem(item.id, nextItem)
-    } catch (toggleError) {
-      setItems((currentItems) => currentItems.map((currentItem) => (currentItem.id === item.id ? item : currentItem)))
-      setError(toggleError instanceof Error ? toggleError.message : 'Unable to update item state.')
-    } finally {
-      setSyncingIds((current) => {
-        const next = { ...current }
-        delete next[item.id]
-        return next
-      })
+  function handleExport() {
+    if (items.length === 0) return
+    const url = buildRemindersShortcutUrl(items)
+    if (!url.endsWith('text=')) {
+      window.location.href = url
     }
   }
 
-  function handleExport() {
-    const url = buildRemindersShortcutUrl(items)
-
-    if (!url.endsWith('text=')) {
-      window.location.href = url
+  async function handleDeleteItem(item: ShoppingListItem) {
+    setItems((current) => current.filter((i) => i.id !== item.id))
+    try {
+      const api = new MealieApi(settings)
+      await api.deleteShoppingItem(item.id)
+    } catch {
+      setItems((current) => [...current, item])
+      setError('Unable to remove that item.')
     }
   }
 
@@ -111,6 +101,7 @@ export function ShoppingListPage() {
     if (toDelete.length === 0) return
 
     setClearingAll(true)
+    setItems([])
 
     const api = new MealieApi(settings)
     const results = await Promise.allSettled(
@@ -128,73 +119,52 @@ export function ShoppingListPage() {
 
     if (remaining.length === 0) {
       clearAddedRecipes(settings)
-      // Leave clearingAll=true — button exits via AnimatePresence (items.length===0)
     } else {
       setError(`${failedIds.size} item${failedIds.size !== 1 ? 's' : ''} could not be removed.`)
       setClearingAll(false)
     }
   }
-
-  const checkedItems = items.filter((item) => item.checked)
   return (
     <div className="space-y-5 animate-rise">
       <section className="space-y-4 rounded-card border border-taupe/70 bg-parchment px-5 py-5 shadow-paper sm:px-6">
-        <div className="flex flex-wrap items-center gap-3 justify-start sm:justify-end">
-          <AnimatePresence initial={false}>
-            {items.length > 0 && (
-              <motion.button
-                layout
-                type="button"
-                onClick={() => void handleClearAll()}
-                disabled={clearingAll}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 0.85 }}
-                transition={{ type: 'spring', bounce: 0.15, duration: 0.3 }}
-                style={{ borderRadius: 9999 }}
-                className={`inline-flex items-center justify-center border border-terracotta/40 bg-terracotta/10 text-terracotta disabled:opacity-60 ${
-                  clearingAll ? 'h-9 w-9' : 'gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em]'
-                }`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" /></svg>
-                <AnimatePresence initial={false}>
-                  {!clearingAll && (
-                    <motion.span
-                      key="label"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.1 }}
-                      className="whitespace-nowrap"
-                    >
-                      Clear
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-            )}
-          </AnimatePresence>
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={checkedItems.length === 0}
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-olive px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-parchment disabled:opacity-45"
-          >
-            <Download className="h-4 w-4" />
-            Export checked to Reminders
-          </button>
-        </div>
+        <div className="flex items-center justify-between gap-3">
+          {shoppingList ? (
+            <p className="font-display text-2xl tracking-[-0.03em] text-ink leading-none">{shoppingList.name || 'Shopping List'}</p>
+          ) : (
+            <p className="font-display text-2xl tracking-[-0.03em] text-ink leading-none">Shopping List</p>
+          )}
 
-        {shoppingList && (
-          <div className="flex items-center gap-3 rounded-[1.3rem] bg-oat/70 px-4 py-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-parchment text-terracotta">
-              <ListChecks className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-2xl tracking-[-0.03em] text-ink">{shoppingList.name || 'Latest list'}</p>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={items.length === 0}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-taupe/60 bg-cream text-ink disabled:opacity-40"
+              aria-label="Export to Reminders"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {(items.length > 0 || clearingAll) && (
+                <motion.button
+                  layout
+                  type="button"
+                  onClick={() => void handleClearAll()}
+                  disabled={clearingAll}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ type: 'spring', bounce: 0.15, duration: 0.3 }}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-terracotta/40 bg-terracotta/10 text-terracotta disabled:opacity-60"
+                  aria-label="Clear all items"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
-        )}
+        </div>
       </section>
 
       {loading && <EmptyState title="Loading the list" description="Pulling your most recently updated shopping list from Mealie." />}
@@ -208,7 +178,7 @@ export function ShoppingListPage() {
       {!loading && !error && items.length > 0 && (
         <section className="space-y-3">
           {items.map((item) => (
-            <ShoppingItemRow key={item.id} item={item} onToggle={handleToggle} disabled={Boolean(syncingIds[item.id])} />
+            <ShoppingItemRow key={item.id} item={item} onDelete={(i) => void handleDeleteItem(i)} />
           ))}
         </section>
       )}
