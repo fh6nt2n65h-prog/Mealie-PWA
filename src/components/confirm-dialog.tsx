@@ -5,6 +5,7 @@ type ConfirmDialogProps = {
   title: string
   description?: string
   confirmLabel?: string
+  showCancelButton?: boolean
   busy?: boolean
   onConfirm: () => void
   onCancel: () => void
@@ -15,6 +16,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = 'Delete',
+  showCancelButton = true,
   busy = false,
   onConfirm,
   onCancel
@@ -31,14 +33,16 @@ export function ConfirmDialog({
       }}
       footer={
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={busy}
-            className="inline-flex items-center justify-center rounded-full border border-taupe bg-parchment px-5 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Cancel
-          </button>
+          {showCancelButton && (
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={busy}
+              className="inline-flex items-center justify-center rounded-full border border-taupe bg-parchment px-5 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
+          )}
           <button
             type="button"
             onClick={onConfirm}

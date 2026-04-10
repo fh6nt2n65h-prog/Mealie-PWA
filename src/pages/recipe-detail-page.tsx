@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown01, Camera, Check, EllipsisVertical, Heart, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { AnimatePresence, motion, useAnimationControls } from 'framer-motion'
+import { ArrowDown01, Camera, Check, Heart, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
@@ -75,6 +75,30 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
   return Math.round(quantity * scale * 100) / 100
 }
 
+function AnimatedActionsIcon({ open }: { open: boolean }) {
+  return (
+    <span className="relative block h-4 w-4" aria-hidden="true">
+      {[
+        { closed: { x: 5, y: 1.5 }, open: { x: 1.5, y: 2.5 } },
+        { closed: { x: 5, y: 5.75 }, open: { x: 7.5, y: 5.75 } },
+        { closed: { x: 5, y: 10 }, open: { x: 1.5, y: 9 } },
+      ].map((dot, index) => (
+        <motion.span
+          key={index}
+          className="absolute h-1.5 w-1.5 rounded-full bg-current"
+          initial={false}
+          animate={{
+            x: open ? dot.open.x : dot.closed.x,
+            y: open ? dot.open.y : dot.closed.y,
+            scale: open ? [1, 1.12, 1] : 1,
+          }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        />
+      ))}
+    </span>
+  )
+}
+
 export function RecipeDetailPage() {
   const { slug } = useParams()
   const navigate = useNavigate()
@@ -91,6 +115,7 @@ export function RecipeDetailPage() {
   const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'added' | 'alreadyAdded' | 'error'>('idle')
   const [isFavorite, setIsFavorite] = useState(false)
   const [favoriteUserId, setFavoriteUserId] = useState<string | null>(null)
+  const favoritePulseControls = useAnimationControls()
 
   // edit sheet
   const [editOpen, setEditOpen] = useState(false)
@@ -302,6 +327,10 @@ export function RecipeDetailPage() {
   async function handleToggleFavorite() {
     if (!recipe?.id) return
     const nextFav = !isFavorite
+    void favoritePulseControls.start({
+      scale: [1, 1.18, 0.92, 1],
+      transition: { duration: 0.24, times: [0, 0.35, 0.7, 1] },
+    })
     setIsFavorite(nextFav)
     const stored = loadFavorites(settings)
     const newSet = new Set(stored)
@@ -488,6 +517,7 @@ export function RecipeDetailPage() {
     setError('')
 
     try {
+      await new Promise((resolve) => window.setTimeout(resolve, 220))
       const api = new MealieApi(settings)
       await api.deleteRecipe(recipe.slug)
       removeRecipeCacheEntry(settings, recipe.slug)
@@ -499,7 +529,13 @@ export function RecipeDetailPage() {
   }
 
   return (
-    <div className={`space-y-5 animate-rise ${cookMode ? 'pb-6' : ''}`}>
+    <motion.div
+      className={`space-y-5 animate-rise ${cookMode ? 'pb-6' : ''}`}
+      initial={false}
+      animate={deleting ? { opacity: 0, scaleX: 0.93, scaleY: 0.84, y: 18, rotate: -2 } : { opacity: 1, scaleX: 1, scaleY: 1, y: 0, rotate: 0 }}
+      transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+      style={{ transformOrigin: '50% 8%' }}
+    >
       {/* Sticky cook-mode shortcut — animates in when the buttons row scrolls out of view */}
       <div className="pointer-events-none sticky top-2 z-20 h-0 overflow-visible">
         <div className="flex justify-end">
@@ -538,7 +574,9 @@ export function RecipeDetailPage() {
               onClick={() => void handleToggleFavorite()}
               className="absolute right-5 top-5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-parchment/80 backdrop-blur-sm shadow-paper"
             >
-              <Heart className={`h-4 w-4 transition-colors ${isFavorite ? 'fill-terracotta/70 text-terracotta/70' : 'text-oliveGray'}`} />
+              <motion.span animate={favoritePulseControls} className="inline-flex">
+                <Heart className={`h-4 w-4 transition-colors ${isFavorite ? 'fill-terracotta/70 text-terracotta/70' : 'text-oliveGray'}`} />
+              </motion.span>
             </button>
           </div>
         ) : null}
@@ -582,7 +620,7 @@ export function RecipeDetailPage() {
                 aria-label="Recipe actions"
                 aria-expanded={actionsMenuOpen}
               >
-                <EllipsisVertical className="h-4 w-4" />
+                <AnimatedActionsIcon open={actionsMenuOpen} />
               </button>
 
               {actionsMenuOpen && (
@@ -824,6 +862,6 @@ export function RecipeDetailPage() {
         onCancel={() => setConfirmDeleteOpen(false)}
         onConfirm={() => void handleDeleteRecipe()}
       />
-    </div>
+    </motion.div>
   )
 }
