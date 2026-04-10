@@ -80,30 +80,48 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
 //             M20 12v8... (pot body)
 function AnimatedCookingPot({ open, className }: { open: boolean; className?: string }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ overflow: 'visible' }}
-      className={className}
-    >
-      {/* Pot body — stays still */}
-      <path d="M2 12h20" />
-      <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" />
-      {/* Lid — lifts and tilts when cook mode opens */}
-      <motion.g
-        animate={{ y: open ? -7 : 0, rotate: open ? -8 : 0 }}
-        style={{ originX: '12px', originY: '6px' }}
-        transition={{ type: 'spring', stiffness: 180, damping: 12 }}
+    <span className={`relative inline-block shrink-0 ${className ?? ''}`}>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-full w-full"
+      >
+        <path d="M2 12h20" />
+        <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" />
+      </svg>
+
+      <motion.svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="absolute inset-0 h-full w-full overflow-visible"
+        style={{ transformOrigin: '50% 30%' }}
+        animate={{ y: open ? -8 : 0, rotate: open ? -14 : 0 }}
+        transition={{ type: 'spring', stiffness: 140, damping: 10, mass: 0.7 }}
       >
         <path d="m4 8 16-4" />
         <path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8" />
-      </motion.g>
-    </svg>
+      </motion.svg>
+
+      <motion.span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-1 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full"
+        animate={{ opacity: open ? 1 : 0, y: open ? -4 : 0, scale: open ? 1 : 0.6 }}
+        transition={{ duration: 0.18 }}
+      >
+        <span className="absolute left-0.5 top-0 h-2 w-[2px] rounded-full bg-current/75" />
+        <span className="absolute left-2 top-0.5 h-2.5 w-[2px] rounded-full bg-current/55" />
+      </motion.span>
+    </span>
   )
 }
 
