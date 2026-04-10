@@ -174,7 +174,7 @@ export function ShoppingListPage() {
               layout
               type="button"
               onClick={() => {
-                if (items.length === 0 || clearingAll) {
+                if (clearingAll) {
                   return
                 }
 

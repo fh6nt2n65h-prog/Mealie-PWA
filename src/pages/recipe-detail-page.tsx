@@ -78,9 +78,9 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
 
 function AnimatedKebabIcon({ open }: { open: boolean }) {
   const dots = [
-    { closed: { x: 6, y: 1.5 }, open: { x: 1.5, y: 6 } },
-    { closed: { x: 6, y: 6 }, open: { x: 6, y: 6 } },
-    { closed: { x: 6, y: 10.5 }, open: { x: 10.5, y: 6 } }
+    { closed: { x: 0, y: -4.5 }, open: { x: -4.5, y: 0 } },
+    { closed: { x: 0, y: 0 }, open: { x: 0, y: 0 } },
+    { closed: { x: 0, y: 4.5 }, open: { x: 4.5, y: 0 } }
   ]
 
   return (
@@ -88,13 +88,13 @@ function AnimatedKebabIcon({ open }: { open: boolean }) {
       initial={false}
       animate={{ scale: open ? [1, 1.06, 1] : 1 }}
       transition={{ duration: 0.26, times: [0, 0.45, 1] }}
-      className="relative block h-4 w-4"
+      className="relative block h-5 w-5"
       aria-hidden="true"
     >
       {dots.map((dot, index) => (
         <motion.span
           key={index}
-          className="absolute h-1 w-1 rounded-full bg-current"
+          className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current"
           initial={false}
           animate={open ? dot.open : dot.closed}
           transition={{ type: 'spring', stiffness: 420, damping: 28, mass: 0.65 }}
