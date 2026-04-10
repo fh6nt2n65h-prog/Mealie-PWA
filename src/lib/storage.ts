@@ -109,3 +109,28 @@ export function toggleFavorite(settings: ApiSettings, recipeId: string): Set<str
   saveFavorites(settings, current)
   return current
 }
+
+// ── Added-to-shopping-list tracking ──────────────────────────────────────────
+// Persists which recipe IDs have had their ingredients sent to the shopping
+// list, so the Add All button can show "Already Added" on return visits.
+
+function addedRecipesKey(settings: ApiSettings) {
+  return `mealie-journal.added-recipes.v1.${settings.baseUrl}`
+}
+
+export function loadAddedRecipes(settings: ApiSettings): Set<string> {
+  const ids = readLocalStorage<string[]>(addedRecipesKey(settings), [])
+  return new Set(ids)
+}
+
+export function markRecipeAdded(settings: ApiSettings, recipeId: string) {
+  if (typeof window === 'undefined') return
+  const current = loadAddedRecipes(settings)
+  current.add(recipeId)
+  window.localStorage.setItem(addedRecipesKey(settings), JSON.stringify([...current]))
+}
+
+export function clearAddedRecipes(settings: ApiSettings) {
+  if (typeof window === 'undefined') return
+  window.localStorage.removeItem(addedRecipesKey(settings))
+}

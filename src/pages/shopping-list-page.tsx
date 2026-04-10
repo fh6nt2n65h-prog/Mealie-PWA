@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Download, ListChecks, Trash2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Download, ListChecks } from 'lucide-react'
 import type { ShoppingList, ShoppingListItem, ShoppingListSummary } from '@/types/mealie'
 import { useSettings } from '@/app/settings-context'
 import { EmptyState } from '@/components/empty-state'
 import { ShoppingItemRow } from '@/components/shopping-item-row'
 import { MealieApi } from '@/lib/mealie-api'
+import { clearAddedRecipes } from '@/lib/storage'
 import { buildRemindersShortcutUrl } from '@/lib/utils'
 
 function resolveActiveList(lists: ShoppingListSummary[]) {
@@ -22,7 +24,7 @@ export function ShoppingListPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [syncingIds, setSyncingIds] = useState<Record<string, boolean>>({})
-  const [clearingChecked, setClearingChecked] = useState(false)
+  const [clearingAll, setClearingAll] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -103,41 +105,75 @@ export function ShoppingListPage() {
     }
   }
 
-  async function handleClearChecked() {
-    if (clearingChecked) return
-    const toDelete = items.filter((item) => item.checked)
+  async function handleClearAll() {
+    if (clearingAll) return
+    const toDelete = [...items]
     if (toDelete.length === 0) return
 
-    setClearingChecked(true)
-    setItems((current) => current.filter((item) => !item.checked))
+    setClearingAll(true)
 
-    try {
-      const api = new MealieApi(settings)
-      await Promise.all(toDelete.map((item) => api.deleteShoppingItem(item.id)))
-    } catch {
-      setItems((current) => [...current, ...toDelete])
-      setError('Unable to clear checked items.')
-    } finally {
-      setClearingChecked(false)
+    const api = new MealieApi(settings)
+    const results = await Promise.allSettled(
+      toDelete.map((item) => api.deleteShoppingItem(item.id))
+    )
+
+    const failedIds = new Set(
+      toDelete
+        .filter((_, i) => results[i]?.status === 'rejected')
+        .map((item) => item.id)
+    )
+
+    const remaining = toDelete.filter((item) => failedIds.has(item.id))
+    setItems(remaining)
+
+    if (remaining.length === 0) {
+      clearAddedRecipes(settings)
+      // Leave clearingAll=true — button exits via AnimatePresence (items.length===0)
+    } else {
+      setError(`${failedIds.size} item${failedIds.size !== 1 ? 's' : ''} could not be removed.`)
+      setClearingAll(false)
     }
   }
 
   const checkedItems = items.filter((item) => item.checked)
-  const uncheckedItems = items.filter((item) => !item.checked)
-
   return (
     <div className="space-y-5 animate-rise">
       <section className="space-y-4 rounded-card border border-taupe/70 bg-parchment px-5 py-5 shadow-paper sm:px-6">
-        <div className="flex flex-wrap gap-3 justify-start sm:justify-end">
-          <button
-            type="button"
-            onClick={() => void handleClearChecked()}
-            disabled={clearingChecked || checkedItems.length === 0}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-terracotta/40 bg-terracotta/10 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-terracotta disabled:opacity-45"
-          >
-            <Trash2 className="h-4 w-4" />
-            {clearingChecked ? 'Clearing…' : 'Clear checked'}
-          </button>
+        <div className="flex flex-wrap items-center gap-3 justify-start sm:justify-end">
+          <AnimatePresence initial={false}>
+            {items.length > 0 && (
+              <motion.button
+                layout
+                type="button"
+                onClick={() => void handleClearAll()}
+                disabled={clearingAll}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 0.85 }}
+                transition={{ type: 'spring', bounce: 0.15, duration: 0.3 }}
+                style={{ borderRadius: 9999 }}
+                className={`inline-flex items-center justify-center border border-terracotta/40 bg-terracotta/10 text-terracotta disabled:opacity-60 ${
+                  clearingAll ? 'h-9 w-9' : 'gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.18em]'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 shrink-0"><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" /></svg>
+                <AnimatePresence initial={false}>
+                  {!clearingAll && (
+                    <motion.span
+                      key="label"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.1 }}
+                      className="whitespace-nowrap"
+                    >
+                      Clear
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.button>
+            )}
+          </AnimatePresence>
           <button
             type="button"
             onClick={handleExport}
@@ -156,7 +192,6 @@ export function ShoppingListPage() {
             </div>
             <div>
               <p className="font-display text-2xl tracking-[-0.03em] text-ink">{shoppingList.name || 'Latest list'}</p>
-              <p className="text-sm text-oliveGray">{uncheckedItems.length} remaining · {checkedItems.length} checked</p>
             </div>
           </div>
         )}

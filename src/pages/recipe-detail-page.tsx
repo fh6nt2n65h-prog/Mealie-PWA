@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/empty-state'
 import { IngredientHighlighter } from '@/components/ingredient-highlighter'
 import { getRecipeCache, invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
-import { loadFavorites, saveFavorites } from '@/lib/storage'
+import { loadFavorites, saveFavorites, loadAddedRecipes, markRecipeAdded } from '@/lib/storage'
 import { extractIngredientKeywords, formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
 
 // ---------- recipe edit types ----------
@@ -87,7 +87,7 @@ export function RecipeDetailPage() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [buttonsInView, setButtonsInView] = useState(true)
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
-  const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'added' | 'error'>('idle')
+  const [listAddStatus, setListAddStatus] = useState<'idle' | 'adding' | 'added' | 'alreadyAdded' | 'error'>('idle')
   const [isFavorite, setIsFavorite] = useState(false)
   const [favoriteUserId, setFavoriteUserId] = useState<string | null>(null)
 
@@ -255,6 +255,13 @@ export function RecipeDetailPage() {
       .catch(() => {})
   }, [recipe?.id, settings.apiToken, settings.baseUrl])
 
+  // Check if this recipe's ingredients have already been added to the shopping list
+  useEffect(() => {
+    if (!recipe?.id) return
+    const added = loadAddedRecipes(settings)
+    if (added.has(recipe.id)) setListAddStatus('alreadyAdded')
+  }, [recipe?.id, settings.apiToken, settings.baseUrl])
+
   if (loading) {
     return <EmptyState title="Loading recipe" description="Gathering ingredients, method, and imagery from Mealie." />
   }
@@ -266,7 +273,7 @@ export function RecipeDetailPage() {
   const image = getRecipeImageUrl(settings.baseUrl, recipe)
 
   async function handleAddToShoppingList() {
-    if (!recipe?.id || listAddStatus === 'adding') {
+    if (!recipe?.id || listAddStatus === 'adding' || listAddStatus === 'added' || listAddStatus === 'alreadyAdded') {
       return
     }
 
@@ -283,6 +290,7 @@ export function RecipeDetailPage() {
       }
 
       await api.addRecipeToShoppingList(listId, recipe.id)
+      markRecipeAdded(settings, recipe.id)
       setListAddStatus('added')
     } catch {
       setListAddStatus('error')
@@ -616,11 +624,11 @@ export function RecipeDetailPage() {
               <button
                 type="button"
                 onClick={() => void handleAddToShoppingList()}
-                disabled={listAddStatus === 'adding' || listAddStatus === 'added'}
+                disabled={listAddStatus === 'adding' || listAddStatus === 'added' || listAddStatus === 'alreadyAdded'}
                 className="inline-flex items-center gap-1 rounded-full bg-sage/20 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-olive transition-opacity disabled:opacity-60"
                 aria-label="Add all ingredients to shopping list"
               >
-                {listAddStatus === 'added' && <><Check className="h-3.5 w-3.5" />Already added</>}
+                {(listAddStatus === 'added' || listAddStatus === 'alreadyAdded') && <><Check className="h-3.5 w-3.5" />{listAddStatus === 'alreadyAdded' ? 'Already added' : 'Added'}</>}
                 {listAddStatus === 'error' && 'No list'}
                 {(listAddStatus === 'idle' || listAddStatus === 'adding') && (
                   <><ListPlus className="h-3.5 w-3.5" />{listAddStatus === 'adding' ? 'Adding…' : 'Add all'}</>
