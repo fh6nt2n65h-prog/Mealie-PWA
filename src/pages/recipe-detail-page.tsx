@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown01, Camera, Check, CookingPot, EllipsisVertical, Heart, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown01, Camera, Check, EllipsisVertical, Heart, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
@@ -72,6 +72,38 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
   }
 
   return Math.round(quantity * scale * 100) / 100
+}
+
+// Lid paths:  m4 8 16-4  (the angled lid line)
+//             m8.86 6.78... (the lid handle loop)
+// Body paths: M2 12h20    (rim)
+//             M20 12v8... (pot body)
+function AnimatedCookingPot({ open, className }: { open: boolean; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      overflow="visible"
+      className={className}
+    >
+      {/* Pot body — stays still */}
+      <path d="M2 12h20" />
+      <path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" />
+      {/* Lid — lifts up when open (cook mode on) */}
+      <motion.g
+        animate={{ y: open ? -3 : 0 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+      >
+        <path d="m4 8 16-4" />
+        <path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8" />
+      </motion.g>
+    </svg>
+  )
 }
 
 export function RecipeDetailPage() {
@@ -516,7 +548,7 @@ export function RecipeDetailPage() {
                   cookMode ? 'border border-taupe bg-cream text-ink' : 'bg-ink text-parchment'
                 }`}
               >
-                <CookingPot className="h-4 w-4" />
+                <AnimatedCookingPot open={cookMode} className="h-4 w-4" />
                 <span>{cookMode ? 'Exit Cook Mode' : 'Cook Mode'}</span>
               </motion.button>
             )}
@@ -570,7 +602,7 @@ export function RecipeDetailPage() {
               onClick={() => setCookMode((current) => !current)}
               className="inline-flex items-center gap-2 rounded-full bg-ink px-3.5 py-2.5 text-xs font-semibold text-parchment"
             >
-              <CookingPot className="h-3.5 w-3.5" />
+              <AnimatedCookingPot open={cookMode} className="h-3.5 w-3.5" />
               {cookMode ? 'Exit Cook Mode' : 'Cook Mode'}
             </button>
             <div ref={actionsMenuRef} className="relative">
