@@ -14,7 +14,7 @@ export default {
                 olive: '#7B7A4B'
             },
             fontFamily: {
-                display: ['Fraunces', 'Georgia', 'serif'],
+                display: ['Alumni Sans Pinstripe', 'Georgia', 'serif'],
                 sans: ['Roboto Condensed', 'ui-sans-serif', 'system-ui', 'sans-serif']
             },
             boxShadow: {

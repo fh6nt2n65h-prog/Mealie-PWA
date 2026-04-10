@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown01, Camera, Check, ImagePlus, ListPlus, Minus, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown01, Camera, Check, ImagePlus, ListPlus, Minus, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
@@ -76,33 +76,7 @@ function scaleQuantity(quantity: number | null | undefined, scale: number) {
   return Math.round(quantity * scale * 100) / 100
 }
 
-function AnimatedKebabIcon({ open }: { open: boolean }) {
-  const dots = [
-    { closed: { x: 0, y: -4.5 }, open: { x: -4.5, y: 0 } },
-    { closed: { x: 0, y: 0 }, open: { x: 0, y: 0 } },
-    { closed: { x: 0, y: 4.5 }, open: { x: 4.5, y: 0 } }
-  ]
 
-  return (
-    <motion.span
-      initial={false}
-      animate={{ scale: open ? [1, 1.06, 1] : 1 }}
-      transition={{ duration: 0.26, times: [0, 0.45, 1] }}
-      className="relative block h-5 w-5"
-      aria-hidden="true"
-    >
-      {dots.map((dot, index) => (
-        <motion.span
-          key={index}
-          className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current"
-          initial={false}
-          animate={open ? dot.open : dot.closed}
-          transition={{ type: 'spring', stiffness: 420, damping: 28, mass: 0.65 }}
-        />
-      ))}
-    </motion.span>
-  )
-}
 
 export function RecipeDetailPage() {
   const { slug } = useParams()
@@ -611,7 +585,7 @@ export function RecipeDetailPage() {
                 aria-label="Recipe actions"
                 aria-expanded={actionsMenuOpen}
               >
-                <AnimatedKebabIcon open={actionsMenuOpen} />
+                <MoreVertical className="h-5 w-5" />
               </button>
 
               {actionsMenuOpen && (
