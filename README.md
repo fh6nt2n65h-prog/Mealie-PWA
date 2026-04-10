@@ -1,321 +1,305 @@
 # Private Culinary Journal
 
-Private Culinary Journal is a React + TypeScript + Vite Progressive Web App that acts as a custom frontend for a self-hosted Mealie instance. The interface is tuned for iOS standalone install behavior, a warm editorial visual language, and fast access to recipes, meal plans, shopping lists, and device-local settings.
+A React + TypeScript PWA that acts as a polished mobile-first frontend for your self-hosted [Mealie](https://mealie.io) instance. Designed for iPhone home screen installation, warm editorial styling, and fast everyday cooking access.
 
-## What This App Includes
+---
 
-- A standalone-capable PWA shell configured for iPhone home screen install behavior.
-- A fixed-header, fixed-tab layout where only the content area scrolls.
-- A Mealie API integration layer using a configurable base URL and Bearer token.
-- Four primary routes: Recipes, Meal Plan, Shopping List, and Settings.
-- Recipe browsing with title-and-ingredient search plus list, grid, and swipe-card views.
-- Meal plan date shortcuts that scroll the schedule to the selected day.
-- A shopping list optimized for immediate checkbox feedback.
-- An iOS Reminders export button that launches a Shortcut with newline-separated unchecked items.
-- Docker and Nginx files for Portainer-friendly deployment.
+## Features
+
+### Recipes
+- Browse your entire Mealie recipe library in **list**, **grid**, or **swipe card** view.
+- Full-text **search** across recipe names and ingredients.
+- **Favourite** recipes with a heart tap — synced back to your Mealie user account.
+- **Pull to refresh** to pick up new recipes from Mealie.
+
+### Recipe Detail
+- **Servings scaler** — tap + / − and all ingredient quantities update proportionally.
+- **Cook Mode** — enlarges the method text for easy cross-room reading. Accessible via the inline button or the sticky pill that appears when you scroll past the header.
+- **Ingredient highlighting** — in Cook Mode, ingredient names in each step are highlighted. Tap one to see a tooltip with the full ingredient details.
+- **Add all ingredients to shopping list** with one tap.
+
+### Recipe Editing
+Open the ⋯ menu on any recipe and choose **Edit recipe** to:
+- Change the title, description, prep/cook/total time, and serving count.
+- **Add, edit, or remove ingredients.** Each ingredient has separate quantity, unit, food name, and note fields. Ingredients originally stored as free-text notes can be split into structured fields and saved correctly.
+- **Add, edit, or remove steps.** Each step has an optional title and body.
+- **Convert to metric** — converts imperial quantities (cups, oz, lbs, °F) to metric in one tap, including Fahrenheit temperatures written inside step text.
+- **Replace or add the recipe photo** — tap the camera button in the Photo section to pick an image from your library. It uploads to Mealie when you save.
+
+### Meal Plan
+- See the next **14 days** of planned meals grouped by day.
+- Tap a **date chip** in the header bar to scroll the feed to that day.
+- **Long-press** a date chip to open a new meal entry pre-filled for that day (horizontal scrolling through chips will not accidentally trigger this).
+- **+ button** on each day card to add a meal to that day.
+- Edit or delete individual meal plan entries.
+- Add either a **recipe link** or a **free-text note** as a meal entry.
+- **Pull to refresh** to sync with Mealie.
+
+### Shopping List
+- View your current Mealie shopping list with checkbox-style rows.
+- Items check off with immediate visual feedback, synced back to Mealie.
+- **Export to Reminders** — sends all unchecked items to an Apple Shortcut in one tap (see setup guide below).
+
+### Settings
+- Configure your Mealie base URL and API token.
+- **Test Connection** button verifies credentials before use.
+- Settings persist locally across sessions.
+
+---
 
 ## Tech Stack
 
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- vite-plugin-pwa
-- Framer Motion
-- Lucide React
+| Layer | Library |
+|---|---|
+| UI framework | React 18 + TypeScript |
+| Build tool | Vite |
+| Styling | Tailwind CSS |
+| Animation | Framer Motion |
+| Icons | Lucide React |
+| PWA | vite-plugin-pwa |
+| Routing | React Router |
 
-## Default Backend Settings
+---
 
-- Mealie base URL: `http://192.168.1.91:9000`
-- API base used by the app: `http://192.168.1.91:9000/api/`
-- Connection test endpoint: `/api/users/self`
-
-## Local Development
+## Getting Started
 
 ### Prerequisites
 
 - Node.js 20 or newer
 - npm
 
-### Install dependencies
+### Install and run
 
 ```bash
 npm install
-```
-
-### Start the development server
-
-```bash
 npm run dev
 ```
 
-Vite is configured to listen on port `4173` and bind to `0.0.0.0`.
+Vite serves on port `4173` bound to `0.0.0.0`.
 
-### Create a production build
+### Production build
 
 ```bash
 npm run build
 ```
 
+---
+
 ## First-Time App Setup
 
 1. Open the app.
-2. Go to `Settings`.
-3. Leave the default Mealie base URL unless your server address is different.
-4. Paste a long-lived Mealie API token.
-5. Tap `Save Settings`.
-6. Tap `Test Connection`.
-7. If the test succeeds, go back to `Recipes`, `Meal Plan`, or `Shopping List`.
+2. Tap **Settings** (bottom nav).
+3. Set **Mealie Base URL** to your Mealie server address, e.g. `http://192.168.1.91:9000`.
+4. Paste a long-lived Mealie **API token** (Mealie → User Profile → API Tokens → Create).
+5. Tap **Save Settings**.
+6. Tap **Test Connection** — it should say "Connected".
+7. Navigate to **Recipes**, **Meal Plan**, or **Shopping List**.
 
-## Mealie API Notes
+---
 
-This client is built against the live Mealie OpenAPI schema from your server. The main endpoints used are:
+## Installing as an iPhone App
 
-- `GET /api/users/self`
-- `GET /api/recipes`
-- `GET /api/recipes/{slug}`
-- `GET /api/households/mealplans`
-- `GET /api/households/shopping/lists`
-- `GET /api/households/shopping/lists/{item_id}`
-- `PUT /api/households/shopping/items/{item_id}`
+1. Open the app URL in **Safari** on your iPhone.
+2. Tap the **Share** button (box with arrow icon at the bottom of Safari).
+3. Scroll down and tap **Add to Home Screen**.
+4. Tap **Add**.
 
-## PWA Notes
+The app now opens full-screen without the browser bar. HTTPS is required for this to work reliably — see the proxy setup below.
 
-- The app manifest is configured with `display: standalone`.
-- Placeholder SVG icons are included in `public/icons/` and should be replaced with final production assets later.
-- The layout is intentionally body-locked so the browser frame behaves more like a native app shell.
+---
 
 ## Docker Deployment
 
-### Build and run with Docker Compose
+### Build and run
 
 ```bash
 docker compose up --build -d
 ```
 
-### Default port mapping
-
-- Container port: `80`
-- Host port: `8088`
+The app is served on host port **8088**.
 
 ### Same-origin API proxy
 
-The production Nginx container proxies `/api/*` to Mealie using the `MEALIE_UPSTREAM` environment variable from `docker-compose.yml`.
+The built-in Nginx config proxies `/api/*` to the Mealie instance at the address in `MEALIE_UPSTREAM` inside `docker-compose.yml`. This avoids cross-origin issues in the browser.
 
-With the current compose file, the app container forwards API calls to:
+After deploying, set the app's **Mealie Base URL** in Settings to the **app's own address**, not the raw Mealie URL:
 
-```text
-http://192.168.1.91:9000
 ```
-
-After deployment, set the app's `Mealie Base URL` to the URL where this client is served, not the raw Mealie URL. Example:
-
-```text
-http://192.168.1.91:8088
-```
-
-That makes the browser call the app origin for both the UI and `/api`, which avoids the cross-origin request problem.
-
-That means the app will be available at:
-
-```text
 http://YOUR-SERVER-IP:8088
 ```
 
-### Portainer deployment notes
+### Portainer deployment
 
-1. Open Portainer.
-2. Go to `Stacks`.
-3. Create a new stack or update an existing one.
-4. Paste the contents of `docker-compose.yml`.
-5. Set the stack path to this project if you are deploying from the filesystem, or upload the project files.
-6. Deploy the stack.
-7. Confirm that the container is healthy and serving traffic on host port `8088`.
+1. Open Portainer → **Stacks** → **Add stack**.
+2. Paste the contents of `docker-compose.yml`.
+3. Deploy.
+4. Confirm the container is running and reachable on port `8088`.
+
+---
+
+## HTTPS Setup (Nginx Proxy Manager)
+
+iPhone requires HTTPS for service workers, home screen installation, and reliable standalone behavior.
+
+### What you need
+
+- This app deployed in Docker.
+- A domain or subdomain pointing to your server (e.g. `recipes.yourdomain.com`).
+- Nginx Proxy Manager (or any reverse proxy that can issue Let's Encrypt certificates).
+
+### Steps
+
+1. Confirm the app works at `http://YOUR-SERVER-IP:8088`.
+2. Open Nginx Proxy Manager → **Proxy Hosts** → **Add Proxy Host**.
+3. **Domain Names**: your subdomain.
+4. **Scheme**: `http`.
+5. **Forward Hostname / IP**: your server's LAN IP.
+6. **Forward Port**: `8088`.
+7. On the **SSL** tab: select **Request a new SSL certificate**, enable **Force SSL**, accept the Let's Encrypt terms, and save.
+8. Update the app's **Mealie Base URL** in Settings to the `https://` address.
+9. Re-add to iPhone home screen after switching to HTTPS.
+
+---
+
+## Apple Shortcuts — Export Shopping List to Reminders
+
+The **Export to Reminders** button sends every unchecked shopping list item to Apple Reminders via a custom Shortcut.
+
+### How it works
+
+When you tap **Export to Reminders**, the app launches a URL like this:
+
+```
+shortcuts://run-shortcut?name=Add%20to%20Reminders&input=text&text=Apples%0AMilk%0ABread
+```
+
+Each item is separated by a newline (`%0A`). iOS opens the Shortcuts app, which receives the full list as text input, splits it line by line, and creates one Reminder per item.
+
+### Before you start
+
+You only need to create this shortcut once. It lives on your iPhone. The app just tells it to run.
+
+---
+
+### Step 1 — Create a new shortcut
+
+1. Open the **Shortcuts** app on your iPhone.
+2. Tap **+** in the top-right corner.
+3. Tap the name area at the top → **Rename**.
+4. Type exactly:
+   ```
+   Add to Reminders
+   ```
+   Spelling, spaces, and capitalisation must match exactly.
+5. Tap **Done**.
+
+---
+
+### Step 2 — Add the Split Text action
+
+6. Tap **Add Action** (or the search bar at the bottom).
+7. Search for **Split Text** and tap it to add it.
+8. Inside the **Split Text** action:
+   - You will see a blue pill labelled something like **Clipboard** or **Provided Input** in the Text field. Tap that pill.
+   - If a menu appears, choose **Shortcut Input**. If it already says **Shortcut Input**, leave it.
+   - Tap the separator control below it (shows **Every Character** by default).
+   - Change it to **New Lines**.
+
+---
+
+### Step 3 — Add the Repeat with Each action
+
+9. Tap **+** below the Split Text action.
+10. Search for **Repeat with Each** and tap it.
+11. The **Repeat with Each** input pill should automatically say **Split Text** (the output from step 2). If not, tap the pill and choose **Split Text**.
+
+---
+
+### Step 4 — Skip blank lines (strongly recommended)
+
+12. Tap inside the **Repeat** block to add an action inside it.
+13. Search for **If** and tap it.
+14. Configure the **If** condition:
+    - First field: tap it → choose **Repeat Item**.
+    - Middle field (condition): choose **is not**.
+    - Last field: leave it completely blank (no text).
+15. The next action goes **inside the If block**, between **If** and **End If**.
+
+---
+
+### Step 5 — Add the reminder action
+
+16. Tap **+** inside the **If** block (between **If** and **End If**).
+17. Search for **Add New Reminder** and tap it.
+18. Inside **Add New Reminder**:
+    - Tap the **Reminder** title field (where it says "Remind me to…"). Delete any placeholder text.
+    - Tap the variable icon (looks like a box/magic wand) and choose **Repeat Item**.
+    - Tap the **List** row and choose the Reminders list you want — e.g. **Groceries**.
+
+---
+
+### Step 6 — Save and test
+
+19. Tap the **play ▶ button** at the very bottom to do a test run. When iOS asks for permission to access Reminders, tap **Allow**.
+20. Tap **Done** to save the shortcut.
+
+Now go to **Shopping List** in the app and tap **Export to Reminders**. Your unchecked items should appear in Reminders within a few seconds.
+
+---
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| "Shortcut not found" | The shortcut name must be exactly `Add to Reminders` — check for extra spaces or different capitalisation |
+| Nothing appears in Reminders | Open the Shortcuts app and run the shortcut manually first. Check that Reminders permission was granted |
+| Each item is one letter | **Split Text** separator is set to **Every Character** instead of **New Lines** — fix that in Step 2 |
+| All items become one reminder | **Split Text** was not added, or the **Repeat with Each** is looping over the wrong thing |
+| Empty reminders appear | Add the **If / is not empty** check from Step 4 |
+| iOS shows a confirmation dialog every time | Go to iPhone **Settings → Shortcuts** and disable **Confirm Shortcuts to Run** |
+| The Shortcuts app opens but nothing happens | Make sure you are running iOS 15 or later |
+
+---
+
+## Mealie API Endpoints Used
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/users/self` | Verify token, get user ID |
+| GET | `/api/users/{id}/favorites` | Load server-synced favourites |
+| POST | `/api/users/{id}/favorites/{slug}` | Add favourite |
+| DELETE | `/api/users/{id}/favorites/{slug}` | Remove favourite |
+| GET | `/api/recipes` | Recipe library |
+| GET | `/api/recipes/{slug}` | Recipe detail |
+| PUT | `/api/recipes/{slug}` | Save recipe edits |
+| PUT | `/api/recipes/{slug}/image` | Upload recipe photo |
+| DELETE | `/api/recipes/{slug}` | Delete recipe |
+| GET | `/api/households/mealplans` | Meal plan entries |
+| POST | `/api/households/mealplans` | Create meal plan entry |
+| PUT | `/api/households/mealplans/{id}` | Edit meal plan entry |
+| DELETE | `/api/households/mealplans/{id}` | Delete meal plan entry |
+| GET | `/api/households/shopping/lists` | Shopping list index |
+| GET | `/api/households/shopping/lists/{id}` | Shopping list detail |
+| PUT | `/api/households/shopping/items/{id}` | Check/uncheck item |
+| POST | `/api/households/shopping/lists/{id}/recipe/{recipeId}` | Add recipe to list |
+
+---
 
 ## Project Structure
 
-```text
+```
 .
-├── public/icons/
-├── nginx/
+├── public/icons/           # PWA icons (replace with final assets)
+├── nginx/                  # Nginx config template
 ├── src/
-│   ├── app/
-│   ├── components/
-│   ├── hooks/
-│   ├── lib/
-│   ├── pages/
-│   └── types/
+│   ├── app/                # Context providers (settings, header slots)
+│   ├── components/         # Shared UI components
+│   ├── hooks/              # Custom hooks (pull-to-refresh, stored state)
+│   ├── lib/                # API client, cache, utilities
+│   ├── pages/              # Route-level page components
+│   └── types/              # TypeScript types for Mealie API
 ├── Dockerfile
 ├── docker-compose.yml
 ├── tailwind.config.ts
 └── vite.config.ts
 ```
-
-## Apple Shortcut Setup Guide
-
-This app exports unchecked shopping list items to an Apple Shortcut using the `shortcuts://` URL scheme. The shortcut name must match exactly.
-
-### Goal
-
-Create an iPhone shortcut named exactly:
-
-```text
-Add to Reminders
-```
-
-### Important note about input from URLs and other apps
-
-Modern iOS does not show a separate toggle named "accept input from URLs." The shortcut becomes ready to receive text from `shortcuts://run-shortcut` as soon as you use the `Shortcut Input` variable inside the shortcut. The steps below do exactly that.
-
-### Tap-by-tap instructions
-
-1. On your iPhone, open the `Shortcuts` app.
-2. Tap the `+` button in the top-right corner.
-3. Tap the shortcut name at the top.
-4. Choose `Rename`.
-5. Enter `Add to Reminders` exactly, with spaces and capitalization as shown.
-6. Tap `Done`.
-7. You are now in the shortcut editor.
-8. Tap `Search Actions` at the bottom.
-9. Search for `Split Text`.
-10. Tap `Split Text` to add it as the first action.
-11. In the `Split Text` action, tap the `Text` field.
-12. If `Shortcut Input` is already shown, leave it alone.
-13. If it is not shown, tap the variable picker and choose `Shortcut Input`.
-14. In the same `Split Text` action, tap the separator control.
-15. Set the separator to `New Lines`.
-16. Tap the action search area again.
-17. Search for `Repeat with Each`.
-18. Tap `Repeat with Each` to add it below `Split Text`.
-19. In the `Repeat with Each` action, make sure the repeated value comes from the `Split Text` result.
-20. Tap inside the `Repeat` block where the next action should go.
-21. Search for `Add New Reminder`.
-22. Tap `Add New Reminder`.
-23. In the `Add New Reminder` action, tap the reminder title field.
-24. Choose the magic variable `Repeat Item`.
-25. Tap the `List` field inside `Add New Reminder`.
-26. Pick the Reminders list you want these items to go into, for example `Groceries`.
-27. Optional but recommended: add an `If` action inside the repeat block before `Add New Reminder`.
-28. Set the condition so it only continues when `Repeat Item` is not empty.
-29. Move `Add New Reminder` inside that `If` block if you added it.
-30. Tap the play button once to test the shortcut manually.
-31. If iOS asks for permission to access Reminders, allow it.
-32. Tap `Done` to save the shortcut.
-
-### What the app sends to the shortcut
-
-When you tap `Export to Reminders`, the app gathers all unchecked shopping list items, joins them with newline characters, and launches a URL in this shape:
-
-```text
-shortcuts://run-shortcut?name=Add%20to%20Reminders&input=text&text=Apples%0AMilk%0ABread
-```
-
-That text becomes `Shortcut Input`, then `Split Text` turns it into one item per line, and `Repeat with Each` creates a reminder for every line.
-
-## Nginx Reverse Proxy and SSL Setup Guide
-
-### Why HTTPS is required on iPhone
-
-iPhone Safari requires a secure context for service workers, installable PWAs, and reliable standalone home screen behavior. In plain terms:
-
-- Without HTTPS, the app may not install correctly.
-- Without HTTPS, service workers may not register.
-- Without HTTPS, the iOS home screen experience becomes unreliable or unavailable.
-
-If you want this app to behave like a native iOS app after `Add to Home Screen`, you should publish it behind HTTPS.
-
-## Option A: Nginx Proxy Manager
-
-This is the easiest path for most beginners.
-
-### Before you start
-
-You need:
-
-- This app running in Docker or Portainer.
-- A domain or subdomain that points to your server.
-- Port `80` and `443` forwarded to your reverse proxy if you want a public Let's Encrypt certificate.
-
-### Step-by-step with Portainer and Nginx Proxy Manager
-
-1. Deploy this app first with the included `docker-compose.yml`.
-2. Confirm the app works locally at `http://YOUR-SERVER-IP:8088`.
-3. Open Nginx Proxy Manager.
-4. Go to `Hosts`.
-5. Click `Proxy Hosts`.
-6. Click `Add Proxy Host`.
-7. In `Domain Names`, enter the hostname you want to use, for example `mealie-app.example.com`.
-8. Set `Scheme` to `http`.
-9. For `Forward Hostname / IP`, enter either:
-   - your Docker host LAN IP, for example `192.168.1.91`, if you want to proxy to the mapped host port, or
-   - the container or service name if both containers are on the same Docker network.
-10. For `Forward Port`, enter `8088` if you are using the mapped host port from the provided compose file.
-11. Enable `Block Common Exploits`.
-12. Save the proxy host.
-13. Open the same proxy host again and go to the `SSL` tab.
-14. Choose `Request a new SSL Certificate`.
-15. Enable `Force SSL`.
-16. Enable `HTTP/2 Support`.
-17. Enter your email address for Let's Encrypt notifications.
-18. Accept the Let's Encrypt terms.
-19. Save again.
-20. Wait for certificate issuance to finish.
-21. Visit `https://your-domain.example.com` in Safari on your iPhone.
-22. Verify that the padlock appears.
-23. Tap Safari `Share`.
-24. Tap `Add to Home Screen`.
-
-### How the port mapping works
-
-With the provided Docker Compose file:
-
-- Nginx inside the PWA container listens on `80`.
-- Docker maps that to host port `8088`.
-- Nginx Proxy Manager then forwards external HTTPS traffic to `YOUR-SERVER-IP:8088`.
-
-## Option B: Standard Nginx plus Certbot
-
-If you are not using Nginx Proxy Manager, you can still publish the app with a classic reverse proxy.
-
-### Basic flow
-
-1. Run this container so the app is available on `http://127.0.0.1:8088` or `http://YOUR-SERVER-IP:8088`.
-2. Install Nginx on the host machine or another reverse proxy server.
-3. Create an Nginx server block for your domain.
-4. Proxy HTTPS traffic to `http://127.0.0.1:8088`.
-5. Use Certbot to request and install a Let's Encrypt certificate.
-
-### Example reverse proxy block
-
-```nginx
-server {
-    listen 80;
-    server_name mealie-app.example.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8088;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-### Example Certbot command
-
-```bash
-sudo certbot --nginx -d mealie-app.example.com
-```
-
-After Certbot finishes:
-
-1. Open the HTTPS URL on your iPhone.
-2. Confirm the certificate is valid.
-3. Add the app to the home screen from Safari.
-
-## Notes for production polish
-
-- Replace the placeholder icons in `public/icons/` with final PNG or SVG assets.
-- If you want richer recipe detail interactions, the Mealie favorites and ratings endpoints are available in the API.
-- If you expose the app publicly, keep the Mealie server protected and use long-lived tokens sparingly.
