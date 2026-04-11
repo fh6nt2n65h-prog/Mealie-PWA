@@ -43,6 +43,32 @@ type RecipeEditDraft = {
   instructions: StepDraft[]
 }
 
+function normalizeIngredientTerm(value: string | null | undefined) {
+  return (value || '').trim().toLowerCase()
+}
+
+function matchesUnitName(unit: RecipeIngredient['unit'], value: string) {
+  const normalized = normalizeIngredientTerm(value)
+
+  if (!normalized || !unit) {
+    return false
+  }
+
+  return [unit.name, unit.abbreviation, unit.pluralName, unit.pluralAbbreviation]
+    .some((candidate) => normalizeIngredientTerm(candidate) === normalized)
+}
+
+function matchesFoodName(food: RecipeIngredient['food'], value: string) {
+  const normalized = normalizeIngredientTerm(value)
+
+  if (!normalized || !food) {
+    return false
+  }
+
+  return [food.name, food.pluralName]
+    .some((candidate) => normalizeIngredientTerm(candidate) === normalized)
+}
+
 function recipeToEditDraft(r: Recipe): RecipeEditDraft {
   return {
     name: r.name || '',
@@ -421,6 +447,95 @@ export function RecipeDetailPage() {
 
     try {
       const api = new MealieApi(settings)
+      const unitResolutionCache = new Map<string, Promise<NonNullable<RecipeIngredient['unit']>>>()
+      const foodResolutionCache = new Map<string, Promise<NonNullable<RecipeIngredient['food']>>>()
+
+      async function resolveUnit(value: string, original: RecipeIngredient['unit']) {
+        const trimmed = value.trim()
+
+        if (!trimmed) {
+          return null
+        }
+
+        if (original?.id && matchesUnitName(original, trimmed)) {
+          return original
+        }
+
+        const cacheKey = normalizeIngredientTerm(trimmed)
+        const cached = unitResolutionCache.get(cacheKey)
+
+        if (cached) {
+          return cached
+        }
+
+        const pending = (async () => {
+          const response = await api.getIngredientUnits(trimmed)
+          const exactMatch = response.items.find((candidate) => candidate.id && matchesUnitName(candidate, trimmed))
+
+          if (exactMatch) {
+            return exactMatch
+          }
+
+          return api.createIngredientUnit({ name: trimmed, abbreviation: null })
+        })()
+
+        unitResolutionCache.set(cacheKey, pending)
+        return pending
+      }
+
+      async function resolveFood(value: string, original: RecipeIngredient['food']) {
+        const trimmed = value.trim()
+
+        if (!trimmed) {
+          return null
+        }
+
+        if (original?.id && matchesFoodName(original, trimmed)) {
+          return original
+        }
+
+        const cacheKey = normalizeIngredientTerm(trimmed)
+        const cached = foodResolutionCache.get(cacheKey)
+
+        if (cached) {
+          return cached
+        }
+
+        const pending = (async () => {
+          const response = await api.getIngredientFoods(trimmed)
+          const exactMatch = response.items.find((candidate) => candidate.id && matchesFoodName(candidate, trimmed))
+
+          if (exactMatch) {
+            return exactMatch
+          }
+
+          return api.createIngredientFood({ name: trimmed })
+        })()
+
+        foodResolutionCache.set(cacheKey, pending)
+        return pending
+      }
+
+      const resolvedIngredients = await Promise.all(editDraft.ingredients.map(async (draft, idx) => {
+        const original = recipe.recipeIngredient[idx]
+        const qty = parseFloat(draft.quantity)
+        const unit = await resolveUnit(draft.unit, original?.unit ?? null)
+        const food = await resolveFood(draft.food, original?.food ?? null)
+
+        return {
+          ...original,
+          // Clear both display and originalText so Mealie uses the structured
+          // fields (qty/unit/food) rather than re-parsing stale free text.
+          originalText: null,
+          display: undefined,
+          quantity: draft.quantity.trim() !== '' && !isNaN(qty) ? qty : null,
+          unit,
+          food,
+          note: draft.note || null,
+          title: draft.title || null,
+        }
+      }))
+
       const payload = {
         ...recipe,
         name: editDraft.name,
@@ -429,22 +544,7 @@ export function RecipeDetailPage() {
         cookTime: editDraft.cookTime || null,
         totalTime: editDraft.totalTime || null,
         recipeServings: parseInt(editDraft.recipeServings, 10) || 1,
-        recipeIngredient: editDraft.ingredients.map((draft, idx) => {
-          const original = recipe.recipeIngredient[idx]
-          const qty = parseFloat(draft.quantity)
-          return {
-            ...original,
-            // Clear both display and originalText so Mealie uses the structured
-            // fields (qty/unit/food) rather than re-parsing stale free text.
-            originalText: null,
-            display: undefined,
-            quantity: draft.quantity.trim() !== '' && !isNaN(qty) ? qty : null,
-            unit: draft.unit.trim() ? { ...(original?.unit?.id != null ? { id: original.unit.id } : {}), name: draft.unit, abbreviation: draft.unit } : null,
-            food: draft.food.trim() ? { ...(original?.food?.id != null ? { id: original.food.id } : {}), name: draft.food } : null,
-            note: draft.note || null,
-            title: draft.title || null,
-          }
-        }),
+        recipeIngredient: resolvedIngredients,
         recipeInstructions: editDraft.instructions.map((s) => ({
           id: s.id,
           title: s.title || null,

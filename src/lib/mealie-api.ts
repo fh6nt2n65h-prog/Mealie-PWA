@@ -3,6 +3,8 @@ import type {
   ApiSettings,
   CreateMealPlanEntryInput,
   CreateRecipeInput,
+  IngredientFood,
+  IngredientUnit,
   MealPlanEntry,
   Pagination,
   Recipe,
@@ -116,6 +118,38 @@ export class MealieApi {
 
   async getRecipe(slug: string) {
     return this.request<Recipe>(`/recipes/${encodeURIComponent(slug)}`)
+  }
+
+  async getIngredientUnits(search: string) {
+    const params = new URLSearchParams({
+      search,
+      perPage: '25'
+    })
+
+    return this.request<Pagination<IngredientUnit>>(`/units?${params.toString()}`)
+  }
+
+  async createIngredientUnit(payload: Pick<IngredientUnit, 'name' | 'abbreviation'>) {
+    return this.request<IngredientUnit>('/units', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  }
+
+  async getIngredientFoods(search: string) {
+    const params = new URLSearchParams({
+      search,
+      perPage: '25'
+    })
+
+    return this.request<Pagination<IngredientFood>>(`/foods?${params.toString()}`)
+  }
+
+  async createIngredientFood(payload: Pick<IngredientFood, 'name'>) {
+    return this.request<IngredientFood>('/foods', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
   }
 
   async createRecipe(payload: CreateRecipeInput) {

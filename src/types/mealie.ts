@@ -35,12 +35,19 @@ export type RecipeTool = {
 export type IngredientUnit = {
   id?: string | null
   name: string
+  pluralName?: string | null
+  description?: string | null
   abbreviation?: string | null
+  pluralAbbreviation?: string | null
+  useAbbreviation?: boolean
+  fraction?: boolean
 }
 
 export type IngredientFood = {
   id?: string | null
   name: string
+  pluralName?: string | null
+  description?: string | null
 }
 
 export type RecipeIngredient = {
@@ -51,6 +58,7 @@ export type RecipeIngredient = {
   display?: string
   title?: string | null
   originalText?: string | null
+  referenceId?: string | null
 }
 
 export type RecipeStep = {
