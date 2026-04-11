@@ -38,7 +38,7 @@ Open the ⋯ menu on any recipe and choose **Edit recipe** to:
 ### Shopping List
 - View your current Mealie shopping list with checkbox-style rows.
 - Items check off with immediate visual feedback, synced back to Mealie.
-- **Export to Reminders** — sends all unchecked items to an Apple Shortcut in one tap (see setup guide below).
+- **Export to Reminders** — sends all shopping list items to an Apple Shortcut in one tap (see setup guide below).
 
 ### Settings
 - Configure your Mealie base URL and API token.
@@ -163,7 +163,7 @@ iPhone requires HTTPS for service workers, home screen installation, and reliabl
 
 ## Apple Shortcuts — Export Shopping List to Reminders
 
-The **Export to Reminders** button sends every unchecked shopping list item to Apple Reminders via a custom Shortcut.
+The **Export to Reminders** button sends every shopping list item to Apple Reminders via a custom Shortcut.
 
 ### How it works
 
@@ -199,7 +199,7 @@ The final shortcut flow should be:
 Input -> Split Text (New Lines) -> Repeat with Each -> If Repeat Item is not empty -> Add Reminder
 ```
 
-After that, go to **Shopping List** in the app and tap **Export to Reminders**. Your unchecked items should appear in Reminders within a few seconds.
+After that, go to **Shopping List** in the app and tap **Export to Reminders**. Your items should appear in Reminders within a few seconds.
 
 ---
 
