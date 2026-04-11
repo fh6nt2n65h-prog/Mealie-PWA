@@ -133,7 +133,7 @@ function getShoppingItemExportText(item: ShoppingListItem) {
     .join(' ')
 }
 
-export function buildRemindersShortcutUrl(items: ShoppingListItem[], returnUrl?: string) {
+export function buildRemindersShortcutUrl(items: ShoppingListItem[]) {
   const payload = items
     .map((item) => getShoppingItemExportText(item))
     .join('\n')
