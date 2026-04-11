@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion, useAnimationControls, useMotionValue, useTransform, animate } from 'framer-motion'
 import { Trash2 } from 'lucide-react'
 import type { ShoppingListItem } from '@/types/mealie'
-import { getShoppingItemText } from '@/lib/utils'
+
 
 type ShoppingItemRowProps = {
   item: ShoppingListItem
@@ -80,11 +80,11 @@ export function ShoppingItemRow({ item, onDelete }: ShoppingItemRowProps) {
       >
         <span className="block text-base leading-6 text-ink">
           {[
-            item.quantity != null && item.quantity !== '' ? item.quantity : null,
+            item.quantity != null ? item.quantity : null,
             item.unit?.abbreviation || item.unit?.name || null,
             item.food?.name || item.display || item.note || 'Untitled item'
           ]
-            .filter(Boolean)
+            .filter((v) => v !== null && v !== undefined && v !== '')
             .join(' ')}
         </span>
       </motion.div>
