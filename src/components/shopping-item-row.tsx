@@ -78,13 +78,14 @@ export function ShoppingItemRow({ item, onDelete }: ShoppingItemRowProps) {
         onDragEnd={() => void handleDragEnd()}
         className="relative grid w-full grid-cols-[1fr] items-start rounded-[1.35rem] border border-taupe/65 bg-parchment px-4 py-4 text-left shadow-paper"
       >
-        <span className="space-y-1">
-          <span className="block text-base leading-6 text-ink">{getShoppingItemText(item)}</span>
-          {(item.quantity || item.unit) && (
-            <span className="block text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-oliveGray">
-              {item.quantity ? `${item.quantity}` : ''} {item.unit?.abbreviation || item.unit?.name || ''}
-            </span>
-          )}
+        <span className="block text-base leading-6 text-ink">
+          {[
+            item.quantity != null && item.quantity !== '' ? item.quantity : null,
+            item.unit?.abbreviation || item.unit?.name || null,
+            item.food?.name || item.display || item.note || 'Untitled item'
+          ]
+            .filter(Boolean)
+            .join(' ')}
         </span>
       </motion.div>
     </div>
