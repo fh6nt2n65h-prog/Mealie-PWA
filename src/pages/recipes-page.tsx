@@ -429,9 +429,17 @@ export function RecipesPage() {
   function handleImageSelection(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files ? Array.from(event.target.files) : []
 
-    revokePreviewUrls(imagePreviewUrls)
-    setSelectedImages(files)
-    setImagePreviewUrls(files.map((file) => URL.createObjectURL(file)))
+    if (files.length === 0) {
+      return
+    }
+
+    const nextPreviewUrls = files.map((file) => URL.createObjectURL(file))
+
+    setSelectedImages((current) => [...current, ...files])
+    setImagePreviewUrls((current) => [...current, ...nextPreviewUrls])
+
+    // Reset input so selecting the same image again still triggers onChange.
+    event.target.value = ''
   }
 
   function removeImage(index: number) {
