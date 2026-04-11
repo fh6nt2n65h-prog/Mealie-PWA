@@ -10,6 +10,10 @@ export function buildApiBaseUrl(baseUrl: string) {
 }
 
 function getRecipeImageVersion(recipe: Recipe | RecipeSummary) {
+  if (typeof recipe.clientImageVersion === 'string' && recipe.clientImageVersion) {
+    return recipe.clientImageVersion
+  }
+
   return typeof recipe.image === 'string' ? recipe.image : ''
 }
 

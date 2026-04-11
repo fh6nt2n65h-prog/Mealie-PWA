@@ -87,6 +87,7 @@ export type RecipeSummary = {
   rating?: number | null
   lastMade?: string | null
   image?: unknown
+  clientImageVersion?: string | null
 }
 
 export type Recipe = RecipeSummary & {

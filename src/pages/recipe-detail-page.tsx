@@ -586,8 +586,9 @@ export function RecipeDetailPage() {
       }))
 
       console.log('All ingredients resolved. Saving recipe to Mealie...')
+      const { clientImageVersion: _clientImageVersion, ...recipePayloadBase } = recipe
       const payload = {
-        ...recipe,
+        ...recipePayloadBase,
         name: editDraft.name,
         description: editDraft.description || null,
         prepTime: editDraft.prepTime || null,
@@ -634,7 +635,11 @@ export function RecipeDetailPage() {
         }
         
         await api.uploadRecipeImage(refreshed.id, imageFile, ext)
-        refreshed = await api.getRecipe(refreshed.slug)
+                const nextImageVersion = Date.now().toString()
+                refreshed = {
+                  ...await api.getRecipe(refreshed.slug),
+                  clientImageVersion: nextImageVersion,
+                }
         URL.revokeObjectURL(imagePreviewUrl ?? '')
         setImageFile(null)
         setImagePreviewUrl(null)
