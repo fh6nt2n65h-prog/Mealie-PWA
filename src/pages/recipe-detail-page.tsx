@@ -588,9 +588,9 @@ export function RecipeDetailPage() {
       }
       await api.updateRecipe(recipe.slug, payload)
       let refreshed = await api.getRecipe(recipe.slug)
-      if (imageFile) {
+      if (imageFile && refreshed.id) {
         const ext = imageFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-        await api.uploadRecipeImage(refreshed.slug, imageFile, ext)
+        await api.uploadRecipeImage(refreshed.id, imageFile, ext)
         refreshed = await api.getRecipe(refreshed.slug)
         URL.revokeObjectURL(imagePreviewUrl ?? '')
         setImageFile(null)

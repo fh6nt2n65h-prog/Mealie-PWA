@@ -270,11 +270,11 @@ export class MealieApi {
     })
   }
 
-  async uploadRecipeImage(slug: string, file: File, extension: string) {
+  async uploadRecipeImage(recipeId: string, file: File, extension: string) {
     const formData = new FormData()
     formData.append('image', file)
     formData.append('extension', extension)
-    return this.request<void>(`/recipes/${encodeURIComponent(slug)}/image`, {
+    return this.request<void>(`/recipes/${recipeId}/image`, {
       method: 'PUT',
       body: formData
     })
