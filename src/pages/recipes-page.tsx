@@ -19,6 +19,50 @@ import { MealieApi } from '@/lib/mealie-api'
 import { loadFavorites, loadViewMode, saveFavorites, saveViewMode } from '@/lib/storage'
 import { clamp, formatDayLabel, matchesRecipeQuery } from '@/lib/utils'
 
+const RECIPES_RETURN_STATE_KEY = 'mealie-journal.recipes-return-state.v1'
+
+type RecipesReturnState = {
+  scrollTop: number
+  swipeIndex: number
+  selectedSlug: string | null
+  viewMode: ViewMode
+}
+
+function loadRecipesReturnState(): RecipesReturnState | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const rawValue = window.sessionStorage.getItem(RECIPES_RETURN_STATE_KEY)
+
+  if (!rawValue) {
+    return null
+  }
+
+  try {
+    return JSON.parse(rawValue) as RecipesReturnState
+  } catch {
+    window.sessionStorage.removeItem(RECIPES_RETURN_STATE_KEY)
+    return null
+  }
+}
+
+function saveRecipesReturnState(state: RecipesReturnState) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.sessionStorage.setItem(RECIPES_RETURN_STATE_KEY, JSON.stringify(state))
+}
+
+function clearRecipesReturnState() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.sessionStorage.removeItem(RECIPES_RETURN_STATE_KEY)
+}
+
 function buildCalendarDays() {
   return Array.from({ length: 14 }, (_, index) => {
     const date = dayjs().add(index, 'day')
@@ -59,6 +103,7 @@ async function hydrateRecipes(api: MealieApi, summaries: RecipeSummary[]) {
 
 export function RecipesPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { settings } = useSettings()
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
@@ -88,6 +133,7 @@ export function RecipesPage() {
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
+  const pendingRestoreRef = useRef<RecipesReturnState | null>(loadRecipesReturnState())
 
   const { pullDistance, refreshing, handleTouchStart, handleTouchMove, handleTouchEnd } = usePullToRefresh({
     onRefresh: () => refreshRecipes({ background: true })
@@ -121,45 +167,6 @@ export function RecipesPage() {
       revokePreviewUrls(imagePreviewUrls)
     }
   }, [imagePreviewUrls])
-
-  const location = useLocation()
-
-  // Save scroll position before leaving recipes page, restore when returning
-  useEffect(() => {
-    const scrollRoot = document.getElementById('app-scroll-root')
-    if (!scrollRoot) return
-
-    // If we're on the recipes page (path is /recipes), restore saved scroll position
-    if (location.pathname === '/recipes') {
-      // Give the page a moment to render before restoring scroll
-      const timeoutId = window.setTimeout(() => {
-        const savedScrollTop = sessionStorage.getItem('recipes-page-scroll-position')
-        if (savedScrollTop !== null) {
-          scrollRoot.scrollTop = parseInt(savedScrollTop, 10)
-          sessionStorage.removeItem('recipes-page-scroll-position')
-        }
-      }, 0)
-
-      return () => window.clearTimeout(timeoutId)
-    }
-  }, [location.pathname])
-
-  // Save scroll position when navigating away from recipes page
-  useEffect(() => {
-    const scrollRoot = document.getElementById('app-scroll-root')
-    if (!scrollRoot) return
-
-    const handleNavigation = () => {
-      if (location.pathname === '/recipes') {
-        sessionStorage.setItem('recipes-page-scroll-position', String(scrollRoot.scrollTop))
-      }
-    }
-
-    // This will be called when the component unmounts or when location changes
-    return () => {
-      handleNavigation()
-    }
-  }, [location.pathname])
 
   async function refreshRecipes(options?: { background?: boolean }) {
     if (!settings.apiToken) {
@@ -302,6 +309,39 @@ export function RecipesPage() {
   const mealPlanDays = useMemo(() => MEAL_PLAN_DAYS, [])
 
   useEffect(() => {
+    if (location.pathname !== '/recipes' || loading || filteredRecipes.length === 0) {
+      return
+    }
+
+    const restoreState = pendingRestoreRef.current
+
+    if (!restoreState) {
+      return
+    }
+
+    if (restoreState.viewMode === 'swipe') {
+      const matchedIndex = restoreState.selectedSlug
+        ? filteredRecipes.findIndex((recipe) => recipe.slug === restoreState.selectedSlug)
+        : -1
+
+      setSwipeIndex(matchedIndex >= 0 ? matchedIndex : clamp(restoreState.swipeIndex, 0, filteredRecipes.length - 1))
+    }
+
+    if (restoreState.viewMode === 'grid') {
+      const scrollRoot = document.getElementById('app-scroll-root')
+
+      if (scrollRoot) {
+        requestAnimationFrame(() => {
+          scrollRoot.scrollTop = restoreState.scrollTop
+        })
+      }
+    }
+
+    pendingRestoreRef.current = null
+    clearRecipesReturnState()
+  }, [filteredRecipes, loading, location.pathname])
+
+  useEffect(() => {
     setSwipeIndex(0)
   }, [searchValue, viewMode])
 
@@ -332,6 +372,20 @@ export function RecipesPage() {
     setRecipes(cacheEntry.recipes)
     resetCreateDialog()
     navigate(`/recipes/${detail.slug}`)
+  }
+
+  function openRecipeDetail(slug: string) {
+    const scrollRoot = document.getElementById('app-scroll-root')
+    const currentRecipe = filteredRecipes[currentSwipeIndex] ?? null
+
+    saveRecipesReturnState({
+      scrollTop: scrollRoot?.scrollTop ?? 0,
+      swipeIndex: currentSwipeIndex,
+      selectedSlug: currentRecipe?.slug ?? null,
+      viewMode,
+    })
+
+    navigate(`/recipes/${slug}`)
   }
 
   async function handleCreateFromUrl() {
@@ -572,7 +626,7 @@ export function RecipesPage() {
                 key={recipe.slug}
                 recipe={recipe}
                 baseUrl={settings.baseUrl}
-                onClick={() => navigate(`/recipes/${recipe.slug}`)}
+                onClick={() => openRecipeDetail(recipe.slug)}
                 onLongPress={() => openRecipeActions(recipe)}
                 isFavorite={recipe.id != null && favoriteIds.has(recipe.id)}
                 onToggleFavorite={recipe.id != null ? () => void handleToggleFavorite(recipe.id!, recipe.slug) : undefined}
@@ -587,7 +641,7 @@ export function RecipesPage() {
             currentIndex={currentSwipeIndex}
             onChangeIndex={setSwipeIndex}
             baseUrl={settings.baseUrl}
-            onSelect={(slug) => navigate(`/recipes/${slug}`)}
+            onSelect={openRecipeDetail}
             onLongPress={(recipe) => openRecipeActions(recipe)}
             favoriteIds={favoriteIds}
             onToggleFavorite={(recipeId) => {
