@@ -281,9 +281,14 @@ export class MealieApi {
   }
 
   async uploadRecipeImage(recipeId: string, file: File, extension: string) {
+    if (!recipeId) {
+      throw new Error('Recipe ID is required to upload an image')
+    }
+    
     const formData = new FormData()
     formData.append('image', file)
     formData.append('extension', extension)
+    
     return this.request<void>(`/recipes/${recipeId}/image`, {
       method: 'PUT',
       body: formData
