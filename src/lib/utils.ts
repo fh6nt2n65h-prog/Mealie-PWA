@@ -142,10 +142,8 @@ export function buildRemindersShortcutUrl(items: ShoppingListItem[], returnUrl?:
   // Use encodeURIComponent to force '%20' so shortcut names and text parse correctly.
   const name = encodeURIComponent('Add to Reminders')
   const text = encodeURIComponent(payload)
-  const success = returnUrl ? `&x-success=${encodeURIComponent(returnUrl)}` : ''
-  const base = returnUrl ? 'shortcuts://x-callback-url/run-shortcut' : 'shortcuts://run-shortcut'
-
-  return `${base}?name=${name}&input=text&text=${text}${success}`
+  // Always use simple shortcuts://run-shortcut URL, no x-success or x-callback-url
+  return `shortcuts://run-shortcut?name=${name}&input=text&text=${text}`
 }
 
 const IGNORED_INGREDIENT_KEYWORDS = new Set([

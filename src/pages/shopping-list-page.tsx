@@ -107,10 +107,7 @@ export function ShoppingListPage() {
 
   function handleExport() {
     if (items.length === 0) return
-    const returnUrl = new URL(window.location.href)
-    returnUrl.searchParams.set('exported', '1')
-
-    const url = buildRemindersShortcutUrl(items, returnUrl.toString())
+    const url = buildRemindersShortcutUrl(items)
     if (url.includes('text=')) {
       window.location.href = url
     }
