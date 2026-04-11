@@ -232,9 +232,12 @@ export function RecipeDetailPage() {
   useEffect(() => {
     const scrollRoot = document.getElementById('app-scroll-root')
     if (scrollRoot && recipe) {
-      scrollRoot.scrollTop = 0
+      // Use requestAnimationFrame to ensure DOM is ready before scrolling
+      requestAnimationFrame(() => {
+        scrollRoot.scrollTop = 0
+      })
     }
-  }, [slug])
+  }, [slug, recipe])
 
   useEffect(() => {
     const scrollRoot = document.getElementById('app-scroll-root')
