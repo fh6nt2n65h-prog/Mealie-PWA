@@ -487,7 +487,7 @@ export function RecipeDetailPage() {
             }
 
             console.log(`Creating new unit: "${trimmed}"`)
-            const created = await api.createIngredientUnit({ name: trimmed, abbreviation: null })
+            const created = await api.createIngredientUnit({ name: trimmed, abbreviation: '' })
             console.log(`Successfully created unit: "${trimmed}" with id:`, created.id)
             return created
           } catch (err) {
