@@ -82,20 +82,24 @@ export class MealieApi {
       let message = `Request failed with status ${response.status}`
 
       try {
-        const payload = (await response.json()) as ApiErrorPayload
+        const text = await response.text()
+        if (text) {
+          try {
+            const payload = JSON.parse(text) as ApiErrorPayload
 
-        if (typeof payload.detail === 'string') {
-          message = payload.detail
-        }
+            if (typeof payload.detail === 'string') {
+              message = payload.detail
+            }
 
-        if (Array.isArray(payload.detail) && payload.detail[0]?.msg) {
-          message = payload.detail[0].msg
+            if (Array.isArray(payload.detail) && payload.detail[0]?.msg) {
+              message = payload.detail[0].msg
+            }
+          } catch {
+            message = text
+          }
         }
       } catch {
-        const fallback = await response.text()
-        if (fallback) {
-          message = fallback
-        }
+        // Unable to parse error response
       }
 
       throw new MealieApiError(message, response.status)

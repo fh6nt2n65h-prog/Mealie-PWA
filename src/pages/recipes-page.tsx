@@ -434,6 +434,17 @@ export function RecipesPage() {
     setImagePreviewUrls(files.map((file) => URL.createObjectURL(file)))
   }
 
+  function removeImage(index: number) {
+    const newImages = selectedImages.filter((_, i) => i !== index)
+    const newUrls = imagePreviewUrls.filter((_, i) => i !== index)
+    
+    // Revoke the removed URL
+    URL.revokeObjectURL(imagePreviewUrls[index]!)
+    
+    setSelectedImages(newImages)
+    setImagePreviewUrls(newUrls)
+  }
+
   function openRecipeActions(recipe: Recipe) {
     setSelectedRecipe(recipe)
     setRecipeActionMode('menu')
@@ -754,7 +765,17 @@ export function RecipesPage() {
             {imagePreviewUrls.length > 0 && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {imagePreviewUrls.map((previewUrl, index) => (
-                  <img key={`${previewUrl}-${index}`} src={previewUrl} alt="Recipe import preview" className="aspect-square w-full rounded-[1.2rem] object-cover" />
+                  <div key={`${previewUrl}-${index}`} className="relative">
+                    <img src={previewUrl} alt="Recipe import preview" className="aspect-square w-full rounded-[1.2rem] object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full bg-terracotta/90 text-parchment text-sm font-bold shadow-paper hover:bg-terracotta"
+                      aria-label="Remove image"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
