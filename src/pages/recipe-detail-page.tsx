@@ -228,6 +228,14 @@ export function RecipeDetailPage() {
     }
   }, [settings, slug])
 
+  // Scroll to top when recipe changes
+  useEffect(() => {
+    const scrollRoot = document.getElementById('app-scroll-root')
+    if (scrollRoot && recipe) {
+      scrollRoot.scrollTop = 0
+    }
+  }, [slug])
+
   useEffect(() => {
     const scrollRoot = document.getElementById('app-scroll-root')
     const el = buttonsRowRef.current
@@ -469,14 +477,19 @@ export function RecipeDetailPage() {
         }
 
         const pending = (async () => {
-          const response = await api.getIngredientUnits(trimmed)
-          const exactMatch = response.items.find((candidate) => candidate.id && matchesUnitName(candidate, trimmed))
+          try {
+            const response = await api.getIngredientUnits(trimmed)
+            const exactMatch = response.items.find((candidate) => candidate.id && matchesUnitName(candidate, trimmed))
 
-          if (exactMatch) {
-            return exactMatch
+            if (exactMatch) {
+              return exactMatch
+            }
+
+            return api.createIngredientUnit({ name: trimmed, abbreviation: null })
+          } catch (err) {
+            console.error(`Error resolving unit "${trimmed}":`, err)
+            throw err
           }
-
-          return api.createIngredientUnit({ name: trimmed, abbreviation: null })
         })()
 
         unitResolutionCache.set(cacheKey, pending)
@@ -502,14 +515,19 @@ export function RecipeDetailPage() {
         }
 
         const pending = (async () => {
-          const response = await api.getIngredientFoods(trimmed)
-          const exactMatch = response.items.find((candidate) => candidate.id && matchesFoodName(candidate, trimmed))
+          try {
+            const response = await api.getIngredientFoods(trimmed)
+            const exactMatch = response.items.find((candidate) => candidate.id && matchesFoodName(candidate, trimmed))
 
-          if (exactMatch) {
-            return exactMatch
+            if (exactMatch) {
+              return exactMatch
+            }
+
+            return api.createIngredientFood({ name: trimmed })
+          } catch (err) {
+            console.error(`Error resolving food "${trimmed}":`, err)
+            throw err
           }
-
-          return api.createIngredientFood({ name: trimmed })
         })()
 
         foodResolutionCache.set(cacheKey, pending)
@@ -568,6 +586,7 @@ export function RecipeDetailPage() {
       invalidateRecipesLoadedThisSession(settings)
       setEditOpen(false)
     } catch (saveErr) {
+      console.error('Save error:', saveErr)
       setEditError(saveErr instanceof Error ? saveErr.message : 'Unable to save recipe changes.')
     } finally {
       setEditSaving(false)
@@ -789,11 +808,34 @@ export function RecipeDetailPage() {
         open={editOpen}
         title="Edit recipe"
         description={recipe.name || 'Untitled recipe'}
-        onClose={() => { if (!editSaving) { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); setImagePreviewUrl(null); setImageFile(null); setEditOpen(false) } }}
+        onClose={() => { if (!editSaving && !editError) { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); setImagePreviewUrl(null); setImageFile(null); setEditOpen(false) } }}
         footer={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-            <button type="button" onClick={() => void handleSaveEdit()} disabled={editSaving}
-              className="inline-flex items-center justify-center rounded-full bg-olive px-5 py-3 text-sm font-semibold text-parchment disabled:cursor-not-allowed disabled:opacity-60">
+            {editError && (
+              <button 
+                type="button" 
+                onClick={() => setEditError('')}
+                className="inline-flex items-center justify-center rounded-full border border-taupe bg-cream px-5 py-3 text-sm font-semibold text-ink hover:bg-oat/60"
+              >
+                Dismiss error
+              </button>
+            )}
+            {!editError && (
+              <button 
+                type="button" 
+                onClick={() => { if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl); setImagePreviewUrl(null); setImageFile(null); setEditOpen(false) }}
+                disabled={editSaving}
+                className="inline-flex items-center justify-center rounded-full border border-taupe bg-cream px-5 py-3 text-sm font-semibold text-ink hover:bg-oat/60 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            )}
+            <button 
+              type="button" 
+              onClick={() => void handleSaveEdit()} 
+              disabled={editSaving}
+              className="inline-flex items-center justify-center rounded-full bg-olive px-5 py-3 text-sm font-semibold text-parchment disabled:cursor-not-allowed disabled:opacity-60"
+            >
               {editSaving ? 'Saving…' : 'Save recipe'}
             </button>
           </div>
