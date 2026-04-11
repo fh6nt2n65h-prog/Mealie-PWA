@@ -289,10 +289,50 @@ export class MealieApi {
     formData.append('image', file)
     formData.append('extension', extension)
     
-    return this.request<void>(`/recipes/${recipeId}/image`, {
-      method: 'PUT',
-      body: formData
-    })
+    const headers = new Headers()
+    if (this.settings.apiToken) {
+      headers.set('Authorization', `Bearer ${this.settings.apiToken}`)
+    }
+    
+    const requestUrl = `${this.baseUrl}/recipes/${recipeId}/image`
+    
+    try {
+      const response = await fetch(requestUrl, {
+        method: 'PUT',
+        headers,
+        body: formData
+      })
+      
+      // Mealie sometimes returns 500 for image upload but the image actually gets saved
+      // Only throw on actual network errors or 4xx errors (except 500)
+      if (!response.ok && response.status !== 500) {
+        let message = `Image upload failed with status ${response.status}`
+        try {
+          const text = await response.text()
+          if (text) {
+            try {
+              const payload = JSON.parse(text) as { detail?: string }
+              if (typeof payload.detail === 'string') {
+                message = payload.detail
+              }
+            } catch {
+              message = text
+            }
+          }
+        } catch {
+          // Unable to parse error
+        }
+        throw new MealieApiError(message, response.status)
+      }
+    } catch (fetchError) {
+      if (fetchError instanceof MealieApiError) {
+        throw fetchError
+      }
+      throw new MealieApiError(
+        'Failed to upload image. Check that your Mealie instance is reachable.',
+        0
+      )
+    }
   }
 
   async addRecipeToShoppingList(listId: string, recipeId: string) {

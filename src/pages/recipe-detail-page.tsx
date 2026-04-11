@@ -605,44 +605,39 @@ export function RecipeDetailPage() {
       await api.updateRecipe(recipe.slug, payload)
       let refreshed = await api.getRecipe(recipe.slug)
       if (imageFile && refreshed.id) {
-        try {
-          // Extract extension from filename, validate it
-          let ext = imageFile.name.split('.').pop()?.toLowerCase()
-          
-          if (!ext || ext.length === 0) {
-            // If no extension, try to infer from file type
-            if (imageFile.type.includes('jpeg') || imageFile.type.includes('jpg')) {
-              ext = 'jpg'
-            } else if (imageFile.type.includes('png')) {
-              ext = 'png'
-            } else if (imageFile.type.includes('webp')) {
-              ext = 'webp'
-            } else if (imageFile.type.includes('gif')) {
-              ext = 'gif'
-            } else {
-              ext = 'jpg' // fallback
-            }
+        // Extract extension from filename, validate it
+        let ext = imageFile.name.split('.').pop()?.toLowerCase()
+        
+        if (!ext || ext.length === 0) {
+          // If no extension, try to infer from file type
+          if (imageFile.type.includes('jpeg') || imageFile.type.includes('jpg')) {
+            ext = 'jpg'
+          } else if (imageFile.type.includes('png')) {
+            ext = 'png'
+          } else if (imageFile.type.includes('webp')) {
+            ext = 'webp'
+          } else if (imageFile.type.includes('gif')) {
+            ext = 'gif'
+          } else {
+            ext = 'jpg' // fallback
           }
-          
-          // Validate that it's a reasonable image extension
-          const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp']
-          if (!validExtensions.includes(ext)) {
-            throw new Error(`Image format '.${ext}' is not supported. Use: ${validExtensions.join(', ')}`)
-          }
-          
-          if (imageFile.size > 50 * 1024 * 1024) {
-            throw new Error('Image file is too large (max 50MB)')
-          }
-          
-          await api.uploadRecipeImage(refreshed.id, imageFile, ext)
-          refreshed = await api.getRecipe(refreshed.slug)
-          URL.revokeObjectURL(imagePreviewUrl ?? '')
-          setImageFile(null)
-          setImagePreviewUrl(null)
-        } catch (uploadErr) {
-          const msg = uploadErr instanceof Error ? uploadErr.message : 'Failed to upload image'
-          throw new Error(`Image upload error: ${msg}`)
         }
+        
+        // Validate that it's a reasonable image extension
+        const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp']
+        if (!validExtensions.includes(ext)) {
+          throw new Error(`Image format '.${ext}' is not supported. Use: ${validExtensions.join(', ')}`)
+        }
+        
+        if (imageFile.size > 50 * 1024 * 1024) {
+          throw new Error('Image file is too large (max 50MB)')
+        }
+        
+        await api.uploadRecipeImage(refreshed.id, imageFile, ext)
+        refreshed = await api.getRecipe(refreshed.slug)
+        URL.revokeObjectURL(imagePreviewUrl ?? '')
+        setImageFile(null)
+        setImagePreviewUrl(null)
       }
       setRecipe(refreshed)
       setServings(refreshed.recipeServings || 1)
