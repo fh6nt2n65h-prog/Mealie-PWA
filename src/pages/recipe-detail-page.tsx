@@ -482,10 +482,14 @@ export function RecipeDetailPage() {
             const exactMatch = response.items.find((candidate) => candidate.id && matchesUnitName(candidate, trimmed))
 
             if (exactMatch) {
+              console.log(`Found existing unit: "${trimmed}"`)
               return exactMatch
             }
 
-            return api.createIngredientUnit({ name: trimmed, abbreviation: null })
+            console.log(`Creating new unit: "${trimmed}"`)
+            const created = await api.createIngredientUnit({ name: trimmed, abbreviation: null })
+            console.log(`Successfully created unit: "${trimmed}" with id:`, created.id)
+            return created
           } catch (err) {
             console.error(`Error resolving unit "${trimmed}":`, err)
             throw err
@@ -520,10 +524,14 @@ export function RecipeDetailPage() {
             const exactMatch = response.items.find((candidate) => candidate.id && matchesFoodName(candidate, trimmed))
 
             if (exactMatch) {
+              console.log(`Found existing food: "${trimmed}"`)
               return exactMatch
             }
 
-            return api.createIngredientFood({ name: trimmed })
+            console.log(`Creating new food: "${trimmed}"`)
+            const created = await api.createIngredientFood({ name: trimmed })
+            console.log(`Successfully created food: "${trimmed}" with id:`, created.id)
+            return created
           } catch (err) {
             console.error(`Error resolving food "${trimmed}":`, err)
             throw err
@@ -537,7 +545,11 @@ export function RecipeDetailPage() {
       const resolvedIngredients = await Promise.all(editDraft.ingredients.map(async (draft, idx) => {
         const original = recipe.recipeIngredient[idx]
         const qty = parseFloat(draft.quantity)
+        
+        // Step 1: Resolve unit - find existing or create new
         const unit = await resolveUnit(draft.unit, original?.unit ?? null)
+        
+        // Step 2: Resolve food - find existing or create new
         const food = await resolveFood(draft.food, original?.food ?? null)
 
         return {
@@ -554,6 +566,7 @@ export function RecipeDetailPage() {
         }
       }))
 
+      console.log('All ingredients resolved. Saving recipe to Mealie...')
       const payload = {
         ...recipe,
         name: editDraft.name,

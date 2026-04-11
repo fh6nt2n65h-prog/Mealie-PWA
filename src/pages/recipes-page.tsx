@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
 import { flushSync } from 'react-dom'
 import dayjs from 'dayjs'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
 import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
@@ -121,6 +121,45 @@ export function RecipesPage() {
       revokePreviewUrls(imagePreviewUrls)
     }
   }, [imagePreviewUrls])
+
+  const location = useLocation()
+
+  // Save scroll position before leaving recipes page, restore when returning
+  useEffect(() => {
+    const scrollRoot = document.getElementById('app-scroll-root')
+    if (!scrollRoot) return
+
+    // If we're on the recipes page (path is /recipes), restore saved scroll position
+    if (location.pathname === '/recipes') {
+      // Give the page a moment to render before restoring scroll
+      const timeoutId = window.setTimeout(() => {
+        const savedScrollTop = sessionStorage.getItem('recipes-page-scroll-position')
+        if (savedScrollTop !== null) {
+          scrollRoot.scrollTop = parseInt(savedScrollTop, 10)
+          sessionStorage.removeItem('recipes-page-scroll-position')
+        }
+      }, 0)
+
+      return () => window.clearTimeout(timeoutId)
+    }
+  }, [location.pathname])
+
+  // Save scroll position when navigating away from recipes page
+  useEffect(() => {
+    const scrollRoot = document.getElementById('app-scroll-root')
+    if (!scrollRoot) return
+
+    const handleNavigation = () => {
+      if (location.pathname === '/recipes') {
+        sessionStorage.setItem('recipes-page-scroll-position', String(scrollRoot.scrollTop))
+      }
+    }
+
+    // This will be called when the component unmounts or when location changes
+    return () => {
+      handleNavigation()
+    }
+  }, [location.pathname])
 
   async function refreshRecipes(options?: { background?: boolean }) {
     if (!settings.apiToken) {
