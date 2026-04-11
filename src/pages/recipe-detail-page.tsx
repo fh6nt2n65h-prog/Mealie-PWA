@@ -52,7 +52,7 @@ function recipeToEditDraft(r: Recipe): RecipeEditDraft {
     totalTime: r.totalTime || '',
     recipeServings: String(r.recipeServings || 1),
     ingredients: r.recipeIngredient.map((i) => ({
-      quantity: i.quantity === null || i.quantity === undefined ? '' : String(i.quantity),
+      quantity: (i.quantity === null || i.quantity === undefined || i.quantity === 0) ? '' : String(i.quantity),
       unit: i.unit?.abbreviation || i.unit?.name || '',
       food: i.food?.name || '',
       note: i.note || '',
@@ -385,9 +385,9 @@ export function RecipeDetailPage() {
       const qty = parseFloat(draft.quantity)
       return {
         ...original,
-        quantity: draft.quantity && !isNaN(qty) ? qty : null,
-        unit: draft.unit ? { id: original?.unit?.id ?? null, name: draft.unit, abbreviation: draft.unit } : null,
-        food: draft.food ? { id: original?.food?.id ?? null, name: draft.food } : null,
+        quantity: draft.quantity.trim() !== '' && !isNaN(qty) ? qty : null,
+        unit: draft.unit.trim() ? { ...(original?.unit?.id != null ? { id: original.unit.id } : {}), name: draft.unit, abbreviation: draft.unit } : null,
+        food: draft.food.trim() ? { ...(original?.food?.id != null ? { id: original.food.id } : {}), name: draft.food } : null,
       }
     })
 
@@ -438,9 +438,9 @@ export function RecipeDetailPage() {
             // fields (qty/unit/food) rather than re-parsing stale free text.
             originalText: null,
             display: undefined,
-            quantity: draft.quantity && !isNaN(qty) ? qty : null,
-            unit: draft.unit ? { id: original?.unit?.id ?? null, name: draft.unit, abbreviation: draft.unit } : null,
-            food: draft.food ? { id: original?.food?.id ?? null, name: draft.food } : null,
+            quantity: draft.quantity.trim() !== '' && !isNaN(qty) ? qty : null,
+            unit: draft.unit.trim() ? { ...(original?.unit?.id != null ? { id: original.unit.id } : {}), name: draft.unit, abbreviation: draft.unit } : null,
+            food: draft.food.trim() ? { ...(original?.food?.id != null ? { id: original.food.id } : {}), name: draft.food } : null,
             note: draft.note || null,
             title: draft.title || null,
           }
