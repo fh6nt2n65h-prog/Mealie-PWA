@@ -559,6 +559,18 @@ export function RecipeDetailPage() {
         // Step 2: Resolve food - find existing or create new
         const food = await resolveFood(draft.food, original?.food ?? null)
 
+        // For new ingredients (idx >= original length), create from scratch
+        // For existing ingredients, preserve all other fields
+        if (!original) {
+          return {
+            quantity: draft.quantity.trim() !== '' && !isNaN(qty) ? qty : null,
+            unit,
+            food,
+            note: draft.note || null,
+            title: draft.title || null,
+          }
+        }
+
         return {
           ...original,
           // Clear both display and originalText so Mealie uses the structured
