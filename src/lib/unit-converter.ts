@@ -30,6 +30,14 @@ const WEIGHT_TO_G: Record<string, number> = {
   pounds: 453.59,
 }
 
+// Units that should NOT be converted (kitchen-friendly measurements to keep as-is)
+const KEEP_IMPERIAL: Set<string> = new Set([
+  'cup', 'cups', 'c',
+  'tsp', 'teaspoon', 'teaspoons',
+  'tbsp', 'tablespoon', 'tablespoons',
+  't'
+])
+
 // Kitchen-friendly rounding: 1 decimal below 10 ml, whole numbers otherwise
 function kitchenRound(value: number, targetUnit: string): number {
   if (targetUnit === 'ml') {
@@ -49,6 +57,11 @@ export function convertIngredient(ingredient: RecipeIngredient): { ingredient: R
   const unitKey = (ingredient.unit?.abbreviation || ingredient.unit?.name || '').toLowerCase().trim()
 
   if (!unitKey || ingredient.quantity === null || ingredient.quantity === undefined) {
+    return { ingredient: { ...ingredient }, converted: false }
+  }
+
+  // Skip conversion for kitchen-friendly units (cups, teaspoons, tablespoons)
+  if (KEEP_IMPERIAL.has(unitKey)) {
     return { ingredient: { ...ingredient }, converted: false }
   }
 
@@ -109,6 +122,10 @@ export function convertRecipeIngredients(ingredients: RecipeIngredient[]): Conve
 export function hasImperialIngredients(ingredients: RecipeIngredient[]): boolean {
   return ingredients.some((i) => {
     const unitKey = (i.unit?.abbreviation || i.unit?.name || '').toLowerCase().trim()
+    // Skip kitchen-friendly units; only detect truly convertible imperial units
+    if (KEEP_IMPERIAL.has(unitKey)) {
+      return false
+    }
     return unitKey in VOLUME_TO_ML || unitKey in WEIGHT_TO_G
   })
 }
