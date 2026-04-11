@@ -15,7 +15,7 @@ const sessionLoadedKeys = new Set<string>()
 const memoryCache = new Map<string, RecipeCacheEntry>()
 
 function getCacheKey(settings: ApiSettings) {
-  return `${normalizeBaseUrl(settings.baseUrl)}::${settings.apiToken.slice(0, 12)}`
+  return normalizeBaseUrl(settings.baseUrl)
 }
 
 function dispatchRecipeCacheUpdated(settings: ApiSettings, updatedAt: string) {

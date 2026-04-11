@@ -2,3 +2,19 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Environment files (may contain secrets)
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.vscode/settings.json
+*.swp
+*.swo
+Thumbs.db
+
+# Build artifacts
+*.tsbuildinfo
+*.js.map
+*.d.ts.map
