@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion'
 import { Download, Trash2 } from 'lucide-react'
 import type { ShoppingList, ShoppingListItem, ShoppingListSummary } from '@/types/mealie'
@@ -28,6 +28,7 @@ export function ShoppingListPage() {
   const [hasTrackedRecipes, setHasTrackedRecipes] = useState(() => loadAddedRecipes(settings).size > 0)
   const exportPulseControls = useAnimationControls()
   const clearPulseControls = useAnimationControls()
+  const handledExportCallbackRef = useRef(false)
 
   useEffect(() => {
     setHasTrackedRecipes(loadAddedRecipes(settings).size > 0)
@@ -84,10 +85,33 @@ export function ShoppingListPage() {
     }
   }, [settings])
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || handledExportCallbackRef.current || loading) {
+      return
+    }
+
+    const currentUrl = new URL(window.location.href)
+
+    if (currentUrl.searchParams.get('exported') !== '1') {
+      return
+    }
+
+    handledExportCallbackRef.current = true
+    currentUrl.searchParams.delete('exported')
+    window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`)
+
+    if (items.length > 0) {
+      void handleClearAll()
+    }
+  }, [items.length, loading])
+
   function handleExport() {
     if (items.length === 0) return
-    const url = buildRemindersShortcutUrl(items)
-    if (!url.endsWith('text=')) {
+    const returnUrl = new URL(window.location.href)
+    returnUrl.searchParams.set('exported', '1')
+
+    const url = buildRemindersShortcutUrl(items, returnUrl.toString())
+    if (url.includes('text=')) {
       window.location.href = url
     }
   }

@@ -164,16 +164,18 @@ iPhone requires HTTPS for service workers, home screen installation, and reliabl
 ## Apple Shortcuts — Export Shopping List to Reminders
 
 The **Export to Reminders** button sends every shopping list item to Apple Reminders via a custom Shortcut.
+Ingredient notes are excluded from the exported reminder text.
 
 ### How it works
 
 When you tap **Export to Reminders**, the app launches a URL like this:
 
 ```
-shortcuts://run-shortcut?name=Add%20to%20Reminders&input=text&text=Apples%0AMilk%0ABread
+shortcuts://x-callback-url/run-shortcut?name=Add%20to%20Reminders&input=text&text=2%20cups%20Flour%0A1%20Milk&x-success=https%3A%2F%2Fyour-app.example%2Fshopping%3Fexported%3D1
 ```
 
 Each item is separated by a newline (`%0A`). iOS opens the Shortcuts app, which receives the full list as text input, splits it line by line, and creates one Reminder per item.
+Because this uses `x-callback-url`, Shortcuts returns to the app on success, and the shopping list is then cleared automatically.
 
 ### Shortcut setup
 
@@ -199,7 +201,7 @@ The final shortcut flow should be:
 Input -> Split Text (New Lines) -> Repeat with Each -> If Repeat Item is not empty -> Add Reminder
 ```
 
-After that, go to **Shopping List** in the app and tap **Export to Reminders**. Your items should appear in Reminders within a few seconds.
+After that, go to **Shopping List** in the app and tap **Export to Reminders**. Your items should appear in Reminders within a few seconds, then the app will reopen and clear the list.
 
 ---
 
@@ -214,6 +216,7 @@ After that, go to **Shopping List** in the app and tap **Export to Reminders**. 
 | Empty reminders appear | Add the `If Repeat Item is not empty` check before **Add Reminder** |
 | The editor looks different from this README | That is expected on newer iOS versions. Look for the same actions and use the shortcut's incoming text as the source input |
 | iOS shows a confirmation dialog every time | In newer iOS versions this setting moves around. Search iPhone Settings for `Shortcuts` and disable the run confirmation if Apple still exposes it |
+| The app does not bounce back after export | Confirm your iOS shortcut was launched from this app flow (x-callback URL) and that your browser allows returning to the previous app |
 | The Shortcuts app opens but nothing happens | Open the shortcut and confirm it still uses incoming shortcut text, then run it manually once to grant permissions |
 
 ---

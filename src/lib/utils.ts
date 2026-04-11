@@ -121,17 +121,31 @@ export function getShoppingItemText(item: ShoppingListItem) {
   return item.display || item.food?.name || item.note || 'Untitled item'
 }
 
-export function buildRemindersShortcutUrl(items: ShoppingListItem[]) {
+function getShoppingItemExportText(item: ShoppingListItem) {
+  const label = item.food?.name || item.display || 'Untitled item'
+
+  return [
+    item.quantity != null ? item.quantity : null,
+    item.unit?.abbreviation || item.unit?.name || null,
+    label
+  ]
+    .filter((v) => v !== null && v !== undefined && v !== '')
+    .join(' ')
+}
+
+export function buildRemindersShortcutUrl(items: ShoppingListItem[], returnUrl?: string) {
   const payload = items
-    .map((item) => getShoppingItemText(item))
+    .map((item) => getShoppingItemExportText(item))
     .join('\n')
 
   // URLSearchParams encodes spaces as '+', but iOS Shortcuts may treat '+' literally.
   // Use encodeURIComponent to force '%20' so shortcut names and text parse correctly.
   const name = encodeURIComponent('Add to Reminders')
   const text = encodeURIComponent(payload)
+  const success = returnUrl ? `&x-success=${encodeURIComponent(returnUrl)}` : ''
+  const base = returnUrl ? 'shortcuts://x-callback-url/run-shortcut' : 'shortcuts://run-shortcut'
 
-  return `shortcuts://run-shortcut?name=${name}&input=text&text=${text}`
+  return `${base}?name=${name}&input=text&text=${text}${success}`
 }
 
 const IGNORED_INGREDIENT_KEYWORDS = new Set([
