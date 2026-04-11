@@ -7,7 +7,7 @@ A React + TypeScript PWA that acts as a polished mobile-first frontend for your 
 ## Features
 
 ### Recipes
-- Browse your entire Mealie recipe library in **list**, **grid**, or **swipe card** view.
+- Browse your entire Mealie recipe library in **grid**, or **swipe card** view.
 - Full-text **search** across recipe names and ingredients.
 - **Favourite** recipes with a heart tap — synced back to your Mealie user account.
 - **Pull to refresh** to pick up new recipes from Mealie.
@@ -175,75 +175,31 @@ shortcuts://run-shortcut?name=Add%20to%20Reminders&input=text&text=Apples%0AMilk
 
 Each item is separated by a newline (`%0A`). iOS opens the Shortcuts app, which receives the full list as text input, splits it line by line, and creates one Reminder per item.
 
-### Before you start
+### Shortcut setup
+
+The Shortcuts editor changes between iOS releases. On iOS 26 the labels and button locations are different from older screenshots, so the reliable way to build this is to follow the shortcut logic below rather than exact taps.
 
 You only need to create this shortcut once. It lives on your iPhone. The app just tells it to run.
 
----
+1. Open **Shortcuts** and create a new shortcut named exactly `Add to Reminders`.
+2. Add a **Split Text** action.
+3. Set the **Split Text** input to the shortcut's incoming text.
+    On newer iOS versions this variable may appear as `Input`, `Shortcut Input`, or already be filled in automatically.
+4. Set the **Split Text** separator to **New Lines**.
+5. Add a **Repeat with Each** action using the output from **Split Text**.
+6. Inside the repeat block, add an **If** action with the condition `Repeat Item` `is not empty`.
+7. Inside that `If` block, add **Add New Reminder** or **Add Reminder**.
+8. Set the reminder title to `Repeat Item`.
+9. Choose the Reminders list you want, such as `Groceries`.
+10. Save the shortcut, then run it manually once from the Shortcuts app and allow Reminders access when prompted.
 
-### Step 1 — Create a new shortcut
+The final shortcut flow should be:
 
-1. Open the **Shortcuts** app on your iPhone.
-2. Tap **+** in the top-right corner.
-3. Tap the name area at the top → **Rename**.
-4. Type exactly:
-   ```
-   Add to Reminders
-   ```
-   Spelling, spaces, and capitalisation must match exactly.
-5. Tap **Done**.
+```text
+Input -> Split Text (New Lines) -> Repeat with Each -> If Repeat Item is not empty -> Add Reminder
+```
 
----
-
-### Step 2 — Add the Split Text action
-
-6. Tap **Add Action** (or the search bar at the bottom).
-7. Search for **Split Text** and tap it to add it.
-8. Inside the **Split Text** action:
-   - You will see a blue pill labelled something like **Clipboard** or **Provided Input** in the Text field. Tap that pill.
-   - If a menu appears, choose **Shortcut Input**. If it already says **Shortcut Input**, leave it.
-   - Tap the separator control below it (shows **Every Character** by default).
-   - Change it to **New Lines**.
-
----
-
-### Step 3 — Add the Repeat with Each action
-
-9. Tap **+** below the Split Text action.
-10. Search for **Repeat with Each** and tap it.
-11. The **Repeat with Each** input pill should automatically say **Split Text** (the output from step 2). If not, tap the pill and choose **Split Text**.
-
----
-
-### Step 4 — Skip blank lines (strongly recommended)
-
-12. Tap inside the **Repeat** block to add an action inside it.
-13. Search for **If** and tap it.
-14. Configure the **If** condition:
-    - First field: tap it → choose **Repeat Item**.
-    - Middle field (condition): choose **is not**.
-    - Last field: leave it completely blank (no text).
-15. The next action goes **inside the If block**, between **If** and **End If**.
-
----
-
-### Step 5 — Add the reminder action
-
-16. Tap **+** inside the **If** block (between **If** and **End If**).
-17. Search for **Add New Reminder** and tap it.
-18. Inside **Add New Reminder**:
-    - Tap the **Reminder** title field (where it says "Remind me to…"). Delete any placeholder text.
-    - Tap the variable icon (looks like a box/magic wand) and choose **Repeat Item**.
-    - Tap the **List** row and choose the Reminders list you want — e.g. **Groceries**.
-
----
-
-### Step 6 — Save and test
-
-19. Tap the **play ▶ button** at the very bottom to do a test run. When iOS asks for permission to access Reminders, tap **Allow**.
-20. Tap **Done** to save the shortcut.
-
-Now go to **Shopping List** in the app and tap **Export to Reminders**. Your unchecked items should appear in Reminders within a few seconds.
+After that, go to **Shopping List** in the app and tap **Export to Reminders**. Your unchecked items should appear in Reminders within a few seconds.
 
 ---
 
@@ -254,10 +210,11 @@ Now go to **Shopping List** in the app and tap **Export to Reminders**. Your unc
 | "Shortcut not found" | The shortcut name must be exactly `Add to Reminders` — check for extra spaces or different capitalisation |
 | Nothing appears in Reminders | Open the Shortcuts app and run the shortcut manually first. Check that Reminders permission was granted |
 | Each item is one letter | **Split Text** separator is set to **Every Character** instead of **New Lines** — fix that in Step 2 |
-| All items become one reminder | **Split Text** was not added, or the **Repeat with Each** is looping over the wrong thing |
-| Empty reminders appear | Add the **If / is not empty** check from Step 4 |
-| iOS shows a confirmation dialog every time | Go to iPhone **Settings → Shortcuts** and disable **Confirm Shortcuts to Run** |
-| The Shortcuts app opens but nothing happens | Make sure you are running iOS 15 or later |
+| All items become one reminder | **Repeat with Each** is using the wrong input — point it at the output of **Split Text** |
+| Empty reminders appear | Add the `If Repeat Item is not empty` check before **Add Reminder** |
+| The editor looks different from this README | That is expected on newer iOS versions. Look for the same actions and use the shortcut's incoming text as the source input |
+| iOS shows a confirmation dialog every time | In newer iOS versions this setting moves around. Search iPhone Settings for `Shortcuts` and disable the run confirmation if Apple still exposes it |
+| The Shortcuts app opens but nothing happens | Open the shortcut and confirm it still uses incoming shortcut text, then run it manually once to grant permissions |
 
 ---
 
