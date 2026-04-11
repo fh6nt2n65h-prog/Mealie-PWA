@@ -206,6 +206,11 @@ export function RecipeDetailPage() {
         const detail = await api.getRecipe(slug)
 
         if (!cancelled) {
+          // Preserve clientImageVersion from cache if it exists (cache-busting token from recent image upload)
+          if (cached?.clientImageVersion) {
+            detail.clientImageVersion = cached.clientImageVersion
+          }
+          
           setRecipe(detail)
           setServings(detail.recipeServings || 1)
           upsertRecipeCacheEntry(settings, detail)
