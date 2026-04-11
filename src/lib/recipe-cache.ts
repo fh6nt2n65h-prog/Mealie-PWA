@@ -93,7 +93,12 @@ export function setRecipeCache(settings: ApiSettings, recipes: Recipe[]) {
 export function upsertRecipeCacheEntry(settings: ApiSettings, recipe: Recipe) {
   const existing = getRecipeCache(settings)
   const recipes = existing?.recipes || []
-  const nextRecipes = [recipe, ...recipes.filter((candidate) => candidate.slug !== recipe.slug)]
+  
+  // Update recipe in-place, preserving list order
+  const existingIndex = recipes.findIndex((candidate) => candidate.slug === recipe.slug)
+  const nextRecipes = existingIndex >= 0
+    ? recipes.map((r, i) => i === existingIndex ? recipe : r)
+    : [recipe, ...recipes]
 
   return setRecipeCache(settings, nextRecipes)
 }
