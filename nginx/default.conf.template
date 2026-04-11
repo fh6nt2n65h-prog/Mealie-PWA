@@ -5,6 +5,9 @@ server {
   root /usr/share/nginx/html;
   index index.html;
 
+  # Increase max upload size for recipe images
+  client_max_body_size 100M;
+
   location / {
     try_files $uri $uri/ /index.html;
   }
