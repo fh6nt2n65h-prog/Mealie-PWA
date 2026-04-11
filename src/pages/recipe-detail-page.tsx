@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowDown01, Camera, Check, ImagePlus, ListPlus, Minus, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowDown01, Camera, Check, ImagePlus, ListPlus, Minus, MoreVertical, Pencil, Plus, Trash2, X } from 'lucide-react'
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
@@ -396,6 +396,10 @@ export function RecipeDetailPage() {
 
   function removeIngredient(idx: number) {
     setEditDraft((d) => ({ ...d, ingredients: d.ingredients.filter((_, i) => i !== idx) }))
+  }
+
+  function clearIngredientNote(idx: number) {
+    setIngredientField(idx, 'note', '')
   }
 
   function setStepField(idx: number, field: keyof StepDraft, value: string) {
@@ -936,7 +940,24 @@ export function RecipeDetailPage() {
                   </div>
                   <input value={draft.food} onChange={(e) => setIngredientField(idx, 'food', e.target.value)} className={inputCls} placeholder="Ingredient name" />
                   <div className="flex items-center gap-2">
-                    <input value={draft.note} onChange={(e) => setIngredientField(idx, 'note', e.target.value)} className={`${inputCls} flex-1`} placeholder="Note (optional)" />
+                    <div className="relative flex-1">
+                      <input
+                        value={draft.note}
+                        onChange={(e) => setIngredientField(idx, 'note', e.target.value)}
+                        className={`${inputCls} pr-10`}
+                        placeholder="Note (optional)"
+                      />
+                      {draft.note.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => clearIngredientNote(idx)}
+                          className="absolute right-2 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full bg-oat text-oliveGray hover:text-ink"
+                          aria-label="Clear note"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
                     <button type="button" onClick={() => removeIngredient(idx)}
                       className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta text-xs font-bold">×</button>
                   </div>

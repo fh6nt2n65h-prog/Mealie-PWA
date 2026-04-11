@@ -30,6 +30,7 @@ export class MealieApiError extends Error {
 
 export class MealieApi {
   private settings: ApiSettings
+  private static readonly REQUEST_TIMEOUT_MS = 30000
 
   constructor(settings: ApiSettings) {
     this.settings = settings
@@ -65,17 +66,26 @@ export class MealieApi {
     }
 
     let response: Response
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), MealieApi.REQUEST_TIMEOUT_MS)
 
     try {
       response = await fetch(requestUrl, {
         ...init,
-        headers
+        headers,
+        signal: controller.signal
       })
-    } catch {
+    } catch (fetchError) {
+      if (fetchError instanceof DOMException && fetchError.name === 'AbortError') {
+        throw new MealieApiError('The request timed out. Mealie might be busy or unreachable. Please try again.', 0)
+      }
+
       throw new MealieApiError(
         'The browser could not reach your Mealie instance. If this is a local HTTP server, make sure the app is also opened over HTTP and that the Pi is reachable on your network. If the app is installed as an iPhone PWA, Mealie needs HTTPS.',
         0
       )
+    } finally {
+      window.clearTimeout(timeoutId)
     }
 
     if (!response.ok) {
