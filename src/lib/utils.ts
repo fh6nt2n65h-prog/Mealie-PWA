@@ -126,13 +126,12 @@ export function buildRemindersShortcutUrl(items: ShoppingListItem[]) {
     .map((item) => getShoppingItemText(item))
     .join('\n')
 
-  const params = new URLSearchParams({
-    name: 'Add to Reminders',
-    input: 'text',
-    text: payload
-  })
+  // URLSearchParams encodes spaces as '+', but iOS Shortcuts may treat '+' literally.
+  // Use encodeURIComponent to force '%20' so shortcut names and text parse correctly.
+  const name = encodeURIComponent('Add to Reminders')
+  const text = encodeURIComponent(payload)
 
-  return `shortcuts://run-shortcut?${params.toString()}`
+  return `shortcuts://run-shortcut?name=${name}&input=text&text=${text}`
 }
 
 const IGNORED_INGREDIENT_KEYWORDS = new Set([
