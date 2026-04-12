@@ -32,7 +32,6 @@ function AppShellFrame({ children }: { children: ReactNode }) {
   const { isAnimating, isSweetMode } = useSettings()
 
   const pullDist = slots.headerPullDistance || 0
-  const isPulling = pullDist > 0
   const blobColor = (isSweetMode === isAnimating) ? 'rgb(214, 238, 255)' : 'rgb(251, 248, 242)' // blue vs parchment
 
   return (
