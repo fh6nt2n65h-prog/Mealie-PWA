@@ -62,20 +62,23 @@ function AppShellFrame({ children }: { children: ReactNode }) {
             
             {/* The Stretching/Pouring Blob overlapping the bottom border */}
             <motion.div
-              className="absolute top-[calc(100%-5rem)] left-1/2 w-[180vw] -ml-[90vw] origin-top"
-              style={{ backgroundColor: blobColor }}
+              className="absolute top-1/3 left-1/2 -ml-[45vw]"
+              style={{ 
+                backgroundColor: blobColor,
+                width: '90vw',
+                height: 60,
+                borderRadius: '50%'
+              }}
               initial={false}
               animate={{
-                y: isAnimating ? window.innerHeight : pullDist * 0.7,
-                scaleY: isAnimating ? 40 : 1 + pullDist * 0.05,
+                y: isAnimating ? (window.innerHeight * 0.8) : (pullDist * 0.5),
+                scaleY: isAnimating ? 30 : Math.max(1, 0.8 + pullDist * 0.08),
                 borderRadius: isAnimating ? '0%' : '50%',
-                opacity: isAnimating ? 1 : Math.min(pullDist / 20, 1),
-                height: 40 // Base height
               }}
               transition={
                 isAnimating 
                   ? { type: 'spring', damping: 12, stiffness: 90, mass: 1 }
-                  : { type: 'tween', duration: 0 }
+                  : { type: 'tween', duration: 0.05 }
               }
             />
           </div>
