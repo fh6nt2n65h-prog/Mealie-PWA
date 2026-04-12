@@ -15,6 +15,7 @@
     --color-olive-gray: 111 104 95;
     --color-sage: 158 170 146;
     --color-terracotta: 184 111 75;
+    --color-olive: 123 122 75;
 
     /* ── Background gradients ── */
     --bg-body: radial-gradient(circle at top, rgba(184, 111, 75, 0.15), transparent 34%), linear-gradient(180deg, #fbf8f2, #f7f3ec 32%, #f3ede3 100%);
@@ -44,6 +45,7 @@
     --color-olive-gray: 74 104 133;
     --color-sage: 106 158 191;
     --color-terracotta: 212 123 154;
+    --color-olive: 86 133 185;
 
     --bg-body: radial-gradient(circle at top, rgba(100, 160, 220, 0.15), transparent 34%), linear-gradient(180deg, #ebf5ff, #d6eeff 32%, #c8e4ff 100%);
     --bg-halo: radial-gradient(circle at top, rgba(100, 160, 220, 0.12), transparent 46%);
@@ -102,6 +104,11 @@
     font-family: var(--font-display-family);
     font-variation-settings: var(--font-display-settings);
   }
+
+  html.sweet-mode .font-display {
+    font-family: var(--font-display-family) !important;
+    font-variation-settings: normal !important;
+  }
 }
 
 @layer components {
@@ -127,6 +134,142 @@
     background-image:
       radial-gradient(circle at 1px 1px, rgba(26, 58, 92, 0.04) 1px, transparent 0),
       linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(214, 238, 255, 0));
+  }
+
+  html.sweet-mode .bg-cream {
+    background-color: rgb(var(--color-cream)) !important;
+  }
+
+  html.sweet-mode .bg-cream\/95 {
+    background-color: rgb(var(--color-cream) / 0.95) !important;
+  }
+
+  html.sweet-mode .bg-parchment {
+    background-color: rgb(var(--color-parchment)) !important;
+  }
+
+  html.sweet-mode .bg-parchment\/95 {
+    background-color: rgb(var(--color-parchment) / 0.95) !important;
+  }
+
+  html.sweet-mode .bg-parchment\/80 {
+    background-color: rgb(var(--color-parchment) / 0.8) !important;
+  }
+
+  html.sweet-mode .bg-oat {
+    background-color: rgb(var(--color-oat)) !important;
+  }
+
+  html.sweet-mode .bg-oat\/90 {
+    background-color: rgb(var(--color-oat) / 0.9) !important;
+  }
+
+  html.sweet-mode .bg-oat\/70 {
+    background-color: rgb(var(--color-oat) / 0.7) !important;
+  }
+
+  html.sweet-mode .bg-oat\/65 {
+    background-color: rgb(var(--color-oat) / 0.65) !important;
+  }
+
+  html.sweet-mode .bg-oat\/60 {
+    background-color: rgb(var(--color-oat) / 0.6) !important;
+  }
+
+  html.sweet-mode .bg-oat\/50 {
+    background-color: rgb(var(--color-oat) / 0.5) !important;
+  }
+
+  html.sweet-mode .bg-oat\/40 {
+    background-color: rgb(var(--color-oat) / 0.4) !important;
+  }
+
+  html.sweet-mode .bg-sage\/25 {
+    background-color: rgb(var(--color-sage) / 0.25) !important;
+  }
+
+  html.sweet-mode .bg-sage\/20 {
+    background-color: rgb(var(--color-sage) / 0.2) !important;
+  }
+
+  html.sweet-mode .bg-sage\/15 {
+    background-color: rgb(var(--color-sage) / 0.15) !important;
+  }
+
+  html.sweet-mode .bg-terracotta\/10 {
+    background-color: rgb(var(--color-terracotta) / 0.1) !important;
+  }
+
+  html.sweet-mode .bg-ink {
+    background-color: rgb(var(--color-ink)) !important;
+  }
+
+  html.sweet-mode .bg-ink\/75 {
+    background-color: rgb(var(--color-ink) / 0.75) !important;
+  }
+
+  html.sweet-mode .bg-olive {
+    background-color: rgb(var(--color-olive)) !important;
+  }
+
+  html.sweet-mode .text-ink {
+    color: rgb(var(--color-ink)) !important;
+  }
+
+  html.sweet-mode .text-oliveGray {
+    color: rgb(var(--color-olive-gray)) !important;
+  }
+
+  html.sweet-mode .text-oliveGray\/60 {
+    color: rgb(var(--color-olive-gray) / 0.6) !important;
+  }
+
+  html.sweet-mode .text-oliveGray\/30 {
+    color: rgb(var(--color-olive-gray) / 0.3) !important;
+  }
+
+  html.sweet-mode .text-terracotta {
+    color: rgb(var(--color-terracotta)) !important;
+  }
+
+  html.sweet-mode .text-olive {
+    color: rgb(var(--color-olive)) !important;
+  }
+
+  html.sweet-mode .text-parchment {
+    color: rgb(var(--color-parchment)) !important;
+  }
+
+  html.sweet-mode .text-parchment\/75 {
+    color: rgb(var(--color-parchment) / 0.75) !important;
+  }
+
+  html.sweet-mode .border-taupe {
+    border-color: rgb(var(--color-taupe)) !important;
+  }
+
+  html.sweet-mode .border-taupe\/70 {
+    border-color: rgb(var(--color-taupe) / 0.7) !important;
+  }
+
+  html.sweet-mode .border-taupe\/60 {
+    border-color: rgb(var(--color-taupe) / 0.6) !important;
+  }
+
+  html.sweet-mode .border-sage\/60 {
+    border-color: rgb(var(--color-sage) / 0.6) !important;
+  }
+
+  html.sweet-mode .border-terracotta\/40 {
+    border-color: rgb(var(--color-terracotta) / 0.4) !important;
+  }
+
+  html.sweet-mode .border-terracotta\/30 {
+    border-color: rgb(var(--color-terracotta) / 0.3) !important;
+  }
+
+  html.sweet-mode .border-ink {
+    border-color: rgb(var(--color-ink)) !important;
   }
 
   /* ── Mode-switch colour wash animation ── */

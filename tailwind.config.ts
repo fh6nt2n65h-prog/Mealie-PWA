@@ -13,7 +13,7 @@ export default {
         oliveGray: 'rgb(var(--color-olive-gray) / <alpha-value>)',
         sage: 'rgb(var(--color-sage) / <alpha-value>)',
         terracotta: 'rgb(var(--color-terracotta) / <alpha-value>)',
-        olive: '#7B7A4B'
+        olive: 'rgb(var(--color-olive) / <alpha-value>)'
       },
       fontFamily: {
         display: ['var(--font-display-family)', 'Georgia', 'serif'],
