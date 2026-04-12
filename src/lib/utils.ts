@@ -18,7 +18,14 @@ function getRecipeImageVersion(recipe: Recipe | RecipeSummary) {
 }
 
 export function getRecipeImageUrl(baseUrl: string, recipe: Recipe | RecipeSummary, size: 'original' | 'small' = 'original') {
-  if (typeof recipe.image === 'string' && recipe.image.startsWith('http')) {
+  // Legacy imported recipes often keep an external image URL. If we have a
+  // client-side version token from a fresh upload, prefer the Mealie media path
+  // so the updated image is shown instead of the original remote URL.
+  if (
+    typeof recipe.image === 'string'
+    && recipe.image.startsWith('http')
+    && !(typeof recipe.clientImageVersion === 'string' && recipe.clientImageVersion)
+  ) {
     return recipe.image
   }
 
