@@ -6,6 +6,28 @@ A React + TypeScript PWA that acts as a polished mobile-first frontend for your 
 
 ## Features
 
+### Sweet & Savoury Modes
+
+The app supports two culinary modes to organize your recipes:
+
+**Savoury Mode** (default)
+- Browse your everyday savory recipes.
+- Pull down on the Recipes page header and release to switch to **Sweet Mode**.
+- Header text scales and pops as the theme transitions.
+- Recipes automatically tagged with the `savoury` category appear here.
+- Untagged recipes also appear in Savoury Mode (inclusive fallback).
+
+**Sweet Mode**
+- Pull down on the Recipes page header and release to switch to **Sweet Mode**.
+- Entire UI transforms to a **baby blue** color scheme with **DynaPuff** font headers.
+- Recipes tagged with the `sweet` category appear here exclusively.
+- On first use, the app automatically creates the hidden `savoury` and `sweet` categories in Mealie if they don't exist.
+- These categories are **never shown** as chip labels on recipe cards — they exist only for mode filtering.
+
+**Auto-Tagging**
+- When you add a new recipe (via image or URL import), it is automatically tagged with your current mode's category.
+- Changing a recipe's category manually in Mealie updates which mode it appears in.
+
 ### Recipes
 - Browse your entire Mealie recipe library in **grid**, or **swipe card** view.
 - Full-text **search** across recipe names and ingredients.
@@ -44,6 +66,7 @@ Open the ⋯ menu on any recipe and choose **Edit recipe** to:
 - Configure your Mealie base URL and API token.
 - **Test Connection** button verifies credentials before use.
 - Settings persist locally across sessions.
+- **Sweet Mode toggle** — pull down on the Recipes page header to switch between modes.
 
 ---
 
