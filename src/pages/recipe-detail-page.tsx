@@ -14,7 +14,7 @@ import { IngredientHighlighter } from '@/components/ingredient-highlighter'
 import { getRecipeCache, invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
 import { loadFavorites, saveFavorites, loadAddedRecipes, markRecipeAdded } from '@/lib/storage'
-import { extractIngredientKeywords, formatDuration, formatRelativeCookedDate, getRecipeImageUrl } from '@/lib/utils'
+import { extractIngredientKeywords, formatDuration, formatRelativeCookedDate, getRecipeImageUrl, persistRecipeImageVersion } from '@/lib/utils'
 
 // ---------- recipe edit types ----------
 
@@ -641,6 +641,7 @@ export function RecipeDetailPage() {
         
         await api.uploadRecipeImage(refreshed.id, imageFile, ext)
                 const nextImageVersion = Date.now().toString()
+                persistRecipeImageVersion(refreshed.id, nextImageVersion)
                 const apiDetail = await api.getRecipe(refreshed.slug)
                 refreshed = {
                   ...apiDetail,

@@ -9,9 +9,52 @@ export function buildApiBaseUrl(baseUrl: string) {
   return `${normalizeBaseUrl(baseUrl)}/api`
 }
 
+const RECIPE_IMAGE_VERSION_MAP_KEY = 'mealie.image-version-map.v1'
+
+function readRecipeImageVersionMap(): Record<string, string> {
+  if (typeof window === 'undefined') {
+    return {}
+  }
+
+  const raw = window.localStorage.getItem(RECIPE_IMAGE_VERSION_MAP_KEY)
+  if (!raw) {
+    return {}
+  }
+
+  try {
+    return JSON.parse(raw) as Record<string, string>
+  } catch {
+    return {}
+  }
+}
+
+export function persistRecipeImageVersion(recipeId: string, version: string) {
+  if (typeof window === 'undefined' || !recipeId || !version) {
+    return
+  }
+
+  const store = readRecipeImageVersionMap()
+  store[recipeId] = version
+  window.localStorage.setItem(RECIPE_IMAGE_VERSION_MAP_KEY, JSON.stringify(store))
+}
+
+function getPersistedRecipeImageVersion(recipeId?: string | null) {
+  if (!recipeId) {
+    return ''
+  }
+
+  const store = readRecipeImageVersionMap()
+  return typeof store[recipeId] === 'string' ? store[recipeId] : ''
+}
+
 function getRecipeImageVersion(recipe: Recipe | RecipeSummary) {
   if (typeof recipe.clientImageVersion === 'string' && recipe.clientImageVersion) {
     return recipe.clientImageVersion
+  }
+
+  const persistedVersion = getPersistedRecipeImageVersion(recipe.id)
+  if (persistedVersion) {
+    return persistedVersion
   }
 
   return typeof recipe.image === 'string' ? recipe.image : ''
