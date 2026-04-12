@@ -131,8 +131,15 @@ export function RecipeDetailPage() {
   const [convertStatus, setConvertStatus] = useState<{ convertedCount: number; skippedCount: number; skippedNames: string[]; stepsConverted: number } | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
+  const [editFormSeed, setEditFormSeed] = useState(0)
 
   const buttonsRowRef = useRef<HTMLDivElement>(null)
+  const titleInputRef = useRef<HTMLInputElement>(null)
+  const descriptionInputRef = useRef<HTMLTextAreaElement>(null)
+  const prepTimeInputRef = useRef<HTMLInputElement>(null)
+  const cookTimeInputRef = useRef<HTMLInputElement>(null)
+  const totalTimeInputRef = useRef<HTMLInputElement>(null)
+  const servingsInputRef = useRef<HTMLInputElement>(null)
 
   // Per-step ingredient lists: non-ambiguous ingredients are removed from later steps
   // once they've been matched in an earlier step, to avoid redundant highlights.
@@ -371,6 +378,7 @@ export function RecipeDetailPage() {
 
     setActionsMenuOpen(false)
     setEditDraft(recipeToEditDraft(recipe))
+    setEditFormSeed((seed) => seed + 1)
     setEditError('')
     setConvertStatus(null)
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
@@ -592,14 +600,20 @@ export function RecipeDetailPage() {
 
       console.log('All ingredients resolved. Saving recipe to Mealie...')
       const { clientImageVersion: _clientImageVersion, ...recipePayloadBase } = recipe
+      const name = titleInputRef.current?.value ?? editDraft.name
+      const description = descriptionInputRef.current?.value ?? editDraft.description
+      const prepTime = prepTimeInputRef.current?.value ?? editDraft.prepTime
+      const cookTime = cookTimeInputRef.current?.value ?? editDraft.cookTime
+      const totalTime = totalTimeInputRef.current?.value ?? editDraft.totalTime
+      const recipeServings = servingsInputRef.current?.value ?? editDraft.recipeServings
       const payload = {
         ...recipePayloadBase,
-        name: editDraft.name,
-        description: editDraft.description || null,
-        prepTime: editDraft.prepTime || null,
-        cookTime: editDraft.cookTime || null,
-        totalTime: editDraft.totalTime || null,
-        recipeServings: parseInt(editDraft.recipeServings, 10) || 1,
+        name,
+        description: description || null,
+        prepTime: prepTime || null,
+        cookTime: cookTime || null,
+        totalTime: totalTime || null,
+        recipeServings: parseInt(recipeServings, 10) || 1,
         recipeIngredient: resolvedIngredients,
         recipeInstructions: editDraft.instructions.map((s) => ({
           id: s.id,
@@ -944,11 +958,11 @@ export function RecipeDetailPage() {
             <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Basic info</h4>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-ink">Title</span>
-              <input value={editDraft.name} onChange={(e) => setEditDraft((d) => ({ ...d, name: e.target.value }))} className={inputCls} placeholder="Recipe title" />
+              <input key={`title-${editFormSeed}`} ref={titleInputRef} defaultValue={editDraft.name} className={inputCls} placeholder="Recipe title" />
             </label>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-ink">Description</span>
-              <textarea value={editDraft.description} onChange={(e) => setEditDraft((d) => ({ ...d, description: e.target.value }))} rows={3} className="w-full rounded-[1.1rem] border border-taupe bg-cream px-4 py-2.5 text-sm text-ink outline-none placeholder:text-oliveGray/60" placeholder="A short description" />
+              <textarea key={`description-${editFormSeed}`} ref={descriptionInputRef} defaultValue={editDraft.description} rows={3} className="w-full rounded-[1.1rem] border border-taupe bg-cream px-4 py-2.5 text-sm text-ink outline-none placeholder:text-oliveGray/60" placeholder="A short description" />
             </label>
           </section>
 
@@ -957,20 +971,20 @@ export function RecipeDetailPage() {
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold text-ink">Prep</span>
-                <input value={editDraft.prepTime} onChange={(e) => setEditDraft((d) => ({ ...d, prepTime: e.target.value }))} className={inputCls} placeholder="PT15M" />
+                <input key={`prep-${editFormSeed}`} ref={prepTimeInputRef} defaultValue={editDraft.prepTime} className={inputCls} placeholder="PT15M" />
               </label>
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold text-ink">Cook</span>
-                <input value={editDraft.cookTime} onChange={(e) => setEditDraft((d) => ({ ...d, cookTime: e.target.value }))} className={inputCls} placeholder="PT30M" />
+                <input key={`cook-${editFormSeed}`} ref={cookTimeInputRef} defaultValue={editDraft.cookTime} className={inputCls} placeholder="PT30M" />
               </label>
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold text-ink">Total</span>
-                <input value={editDraft.totalTime} onChange={(e) => setEditDraft((d) => ({ ...d, totalTime: e.target.value }))} className={inputCls} placeholder="PT45M" />
+                <input key={`total-${editFormSeed}`} ref={totalTimeInputRef} defaultValue={editDraft.totalTime} className={inputCls} placeholder="PT45M" />
               </label>
             </div>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-ink">Servings</span>
-              <input type="number" min="1" value={editDraft.recipeServings} onChange={(e) => setEditDraft((d) => ({ ...d, recipeServings: e.target.value }))} className={inputCls} placeholder="4" />
+              <input key={`servings-${editFormSeed}`} ref={servingsInputRef} type="number" min="1" defaultValue={editDraft.recipeServings} className={inputCls} placeholder="4" />
             </label>
           </section>
 
