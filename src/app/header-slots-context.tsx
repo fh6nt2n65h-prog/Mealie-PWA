@@ -10,6 +10,7 @@ type HeaderSlots = {
   sideContent?: ReactNode
   bottomContent?: ReactNode
   headerTouchHandlers?: HeaderTouchHandlers
+  headerPullDistance?: number
 }
 
 type HeaderSlotsContextValue = {

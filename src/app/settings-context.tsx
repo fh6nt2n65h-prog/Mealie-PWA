@@ -40,11 +40,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const toggleSweetMode = useCallback(() => {
+    setIsAnimating(true)
     setIsSweetMode((prev) => {
       const next = !prev
       localStorage.setItem(SWEET_MODE_KEY, next ? '1' : '0')
-      // Apply CSS class synchronously so the overlay inherits the new theme vars immediately
-      document.documentElement.classList.toggle('sweet-mode', next)
+      
+      // Delay CSS class so the new-colour pour can animate over the old-colour background
+      window.setTimeout(() => {
+        document.documentElement.classList.toggle('sweet-mode', next)
+      }, 200)
+
       return next
     })
 
@@ -52,7 +57,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       window.clearTimeout(animationTimerRef.current)
     }
 
-    setIsAnimating(true)
     animationTimerRef.current = window.setTimeout(() => {
       setIsAnimating(false)
       animationTimerRef.current = null

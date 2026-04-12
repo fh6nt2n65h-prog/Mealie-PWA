@@ -571,6 +571,7 @@ export function RecipesPage() {
 
   useHeaderSlots({
     headerTouchHandlers: headerPullHandlers,
+    headerPullDistance: headerPullDistance,
     bottomContent: headerPullDistance > 0 ? (
       <div className="flex justify-center pointer-events-none" aria-hidden="true">
         <div
