@@ -8,6 +8,7 @@ import type {
   MealPlanEntry,
   Pagination,
   Recipe,
+  RecipeCategory,
   RecipeSummary,
   ShoppingList,
   ShoppingListItem,
@@ -17,6 +18,41 @@ import type {
   UserRatings,
 } from '@/types/mealie'
 import { buildApiBaseUrl } from '@/lib/utils'
+
+export type ModeCategories = {
+  savoury: RecipeCategory
+  sweet: RecipeCategory
+}
+
+const MODE_CATEGORIES_CACHE_KEY = 'mealie.mode-categories.v1'
+
+export async function ensureModeCategories(api: MealieApi): Promise<ModeCategories> {
+  const cached = sessionStorage.getItem(MODE_CATEGORIES_CACHE_KEY)
+
+  if (cached) {
+    try {
+      return JSON.parse(cached) as ModeCategories
+    } catch {
+      // ignore invalid cache
+    }
+  }
+
+  const response = await api.getCategories()
+  let savoury: RecipeCategory | null = response.items.find((c) => c.slug === 'savoury') ?? null
+  let sweet: RecipeCategory | null = response.items.find((c) => c.slug === 'sweet') ?? null
+
+  if (!savoury) {
+    savoury = await api.createCategory('Savoury', 'savoury')
+  }
+
+  if (!sweet) {
+    sweet = await api.createCategory('Sweet', 'sweet')
+  }
+
+  const result: ModeCategories = { savoury, sweet }
+  sessionStorage.setItem(MODE_CATEGORIES_CACHE_KEY, JSON.stringify(result))
+  return result
+}
 
 export class MealieApiError extends Error {
   status: number
@@ -354,6 +390,17 @@ export class MealieApi {
   async removeFavorite(userId: string, slug: string) {
     return this.request<void>(`/users/${encodeURIComponent(userId)}/favorites/${encodeURIComponent(slug)}`, {
       method: 'DELETE'
+    })
+  }
+
+  async getCategories() {
+    return this.request<Pagination<RecipeCategory>>('/organizers/categories?perPage=100')
+  }
+
+  async createCategory(name: string, slug: string) {
+    return this.request<RecipeCategory>('/organizers/categories', {
+      method: 'POST',
+      body: JSON.stringify({ name, slug })
     })
   }
 

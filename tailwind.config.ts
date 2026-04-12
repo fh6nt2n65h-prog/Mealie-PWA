@@ -5,18 +5,18 @@ export default {
   theme: {
     extend: {
       colors: {
-        cream: '#F7F3EC',
-        parchment: '#FBF8F2',
-        oat: '#F1E8DA',
-        taupe: '#D8CCBA',
-        ink: '#2E2924',
-        oliveGray: '#6F685F',
-        sage: '#9EAA92',
-        terracotta: '#B86F4B',
+        cream: 'rgb(var(--color-cream) / <alpha-value>)',
+        parchment: 'rgb(var(--color-parchment) / <alpha-value>)',
+        oat: 'rgb(var(--color-oat) / <alpha-value>)',
+        taupe: 'rgb(var(--color-taupe) / <alpha-value>)',
+        ink: 'rgb(var(--color-ink) / <alpha-value>)',
+        oliveGray: 'rgb(var(--color-olive-gray) / <alpha-value>)',
+        sage: 'rgb(var(--color-sage) / <alpha-value>)',
+        terracotta: 'rgb(var(--color-terracotta) / <alpha-value>)',
         olive: '#7B7A4B'
       },
       fontFamily: {
-        display: ['Fraunces', 'Georgia', 'serif'],
+        display: ['var(--font-display-family)', 'Georgia', 'serif'],
         sans: ['Roboto Condensed', 'ui-sans-serif', 'system-ui', 'sans-serif']
       },
       boxShadow: {
@@ -29,8 +29,8 @@ export default {
       },
       backgroundImage: {
         grain: "radial-gradient(circle at 1px 1px, rgba(76, 60, 42, 0.045) 1px, transparent 0)",
-        halo: 'radial-gradient(circle at top, rgba(184, 111, 75, 0.12), transparent 46%)',
-        wash: 'linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.2))'
+        halo: 'var(--bg-halo)',
+        wash: 'var(--bg-wash)'
       },
       keyframes: {
         rise: {

@@ -6,6 +6,7 @@ import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, Re
 import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
+import { useHeaderPullToggle } from '@/hooks/use-header-pull-toggle'
 import { AnimatedHeartIcon } from '@/components/animated-heart-icon'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
@@ -104,7 +105,7 @@ async function hydrateRecipes(api: MealieApi, summaries: RecipeSummary[]) {
 export function RecipesPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { settings } = useSettings()
+  const { settings, isSweetMode, toggleSweetMode, modeCategories } = useSettings()
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -137,6 +138,10 @@ export function RecipesPage() {
 
   const { pullDistance, refreshing, handleTouchStart, handleTouchMove, handleTouchEnd } = usePullToRefresh({
     onRefresh: () => refreshRecipes({ background: true })
+  })
+
+  const { pullDistance: headerPullDistance, pullThreshold: headerPullThreshold, handlers: headerPullHandlers } = useHeaderPullToggle({
+    onToggle: toggleSweetMode
   })
 
   function revokePreviewUrls(urls: string[]) {
@@ -302,7 +307,24 @@ export function RecipesPage() {
   }
 
   const viewMode = storedViewMode === 'grid' ? 'grid' : 'swipe'
-  const filteredRecipes = recipes.filter(
+
+  // Apply mode filter: Sweet shows only sweet-tagged; Savoury shows untagged + savoury (excludes pure-sweet)
+  const modeFilteredRecipes = useMemo(() => {
+    return recipes.filter((recipe) => {
+      const categories = recipe.recipeCategory ?? []
+      const hasSweet = categories.some((c) => c.slug === 'sweet')
+      const hasSavoury = categories.some((c) => c.slug === 'savoury')
+
+      if (isSweetMode) {
+        return hasSweet
+      }
+
+      // Savoury mode: include untagged and savoury-tagged; exclude pure-sweet
+      return !hasSweet || hasSavoury
+    })
+  }, [recipes, isSweetMode])
+
+  const filteredRecipes = modeFilteredRecipes.filter(
     (recipe) => matchesRecipeQuery(recipe, searchValue) && (!showFavoritesOnly || (recipe.id != null && favoriteIds.has(recipe.id)))
   )
   const currentSwipeIndex = clamp(swipeIndex, 0, Math.max(filteredRecipes.length - 1, 0))
@@ -346,6 +368,10 @@ export function RecipesPage() {
   }, [searchValue, viewMode])
 
   useEffect(() => {
+    setSwipeIndex(0)
+  }, [isSweetMode])
+
+  useEffect(() => {
     if (!isSearchOpen) {
       return
     }
@@ -366,9 +392,25 @@ export function RecipesPage() {
 
   async function handleImportedRecipe(slug: string) {
     const api = new MealieApi(settings)
-    const detail = await api.getRecipe(slug)
-    const cacheEntry = upsertRecipeCacheEntry(settings, detail)
+    let detail = await api.getRecipe(slug)
 
+    // Auto-tag with the current mode category
+    if (modeCategories) {
+      const modeCategory = isSweetMode ? modeCategories.sweet : modeCategories.savoury
+      const existing = detail.recipeCategory ?? []
+      const alreadyTagged = existing.some((c) => c.slug === modeCategory.slug)
+
+      if (!alreadyTagged) {
+        try {
+          await api.updateRecipe(slug, { ...detail, recipeCategory: [...existing, modeCategory] })
+          detail = await api.getRecipe(slug)
+        } catch {
+          // Tagging failed — proceed without it
+        }
+      }
+    }
+
+    const cacheEntry = upsertRecipeCacheEntry(settings, detail)
     setRecipes(cacheEntry.recipes)
     resetCreateDialog()
     navigate(`/recipes/${detail.slug}`)
@@ -528,6 +570,21 @@ export function RecipesPage() {
   }
 
   useHeaderSlots({
+    headerTouchHandlers: headerPullHandlers,
+    bottomContent: headerPullDistance > 0 ? (
+      <div className="flex justify-center pointer-events-none" aria-hidden="true">
+        <div
+          className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper"
+          style={{
+            opacity: Math.min(1, headerPullDistance / headerPullThreshold),
+            transform: `translateY(${Math.min(headerPullDistance * 0.35, 12)}px)`
+          }}
+        >
+          <span role="img" aria-label={isSweetMode ? 'herb' : 'cupcake'}>{isSweetMode ? '🌿' : '🧁'}</span>
+          <span>Switch to {isSweetMode ? 'Savoury' : 'Sweet'}</span>
+        </div>
+      </div>
+    ) : undefined,
     sideContent: settings.apiToken ? (
       <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
         <div

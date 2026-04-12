@@ -4,6 +4,8 @@ import { AnimatedHeartIcon } from '@/components/animated-heart-icon'
 import type { Recipe, RecipeSummary } from '@/types/mealie'
 import { formatDuration, getRecipeImageUrl } from '@/lib/utils'
 
+const HIDDEN_CATEGORY_SLUGS = ['savoury', 'sweet']
+
 type RecipeCardProps = {
   recipe: Recipe | RecipeSummary
   baseUrl: string
@@ -117,7 +119,7 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, onToggleFavo
         <p className={clsx('text-oliveGray', featured ? 'line-clamp-4 min-h-[6rem] text-base leading-7' : 'line-clamp-3 min-h-[4.75rem] text-sm leading-6')}>{recipe.description || 'A quiet favorite waiting to be cooked again.'}</p>
 
         <div className="mt-auto flex min-h-[2rem] flex-wrap gap-1.5 text-[0.66rem] font-semibold uppercase tracking-[0.16em] text-oliveGray">
-          {recipe.recipeCategory?.slice(0, 2).map((category) => (
+          {recipe.recipeCategory?.filter((c) => !HIDDEN_CATEGORY_SLUGS.includes(c.slug)).slice(0, 2).map((category) => (
             <span key={category.slug} className="rounded-full bg-oat px-2.5 py-0.5">
               {category.name}
             </span>

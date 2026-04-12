@@ -1,8 +1,15 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
+type HeaderTouchHandlers = {
+  onTouchStart: React.TouchEventHandler<HTMLElement>
+  onTouchMove: React.TouchEventHandler<HTMLElement>
+  onTouchEnd: React.TouchEventHandler<HTMLElement>
+}
+
 type HeaderSlots = {
   sideContent?: ReactNode
   bottomContent?: ReactNode
+  headerTouchHandlers?: HeaderTouchHandlers
 }
 
 type HeaderSlotsContextValue = {

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,SOFT,WONK,wght@9..144,100,1,400;9..144,100,1,600&family=Roboto+Condensed:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,SOFT,WONK,wght@9..144,100,1,400;9..144,100,1,600&family=Modak&family=Roboto+Condensed:wght@400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,15 +6,51 @@
 
 @layer base {
   :root {
+    /* ── Theme colour channels (space-separated R G B for Tailwind rgb() opacity utilities) ── */
+    --color-cream: 247 243 236;
+    --color-parchment: 251 248 242;
+    --color-oat: 241 232 218;
+    --color-taupe: 216 204 186;
+    --color-ink: 46 41 36;
+    --color-olive-gray: 111 104 95;
+    --color-sage: 158 170 146;
+    --color-terracotta: 184 111 75;
+
+    /* ── Background gradients ── */
+    --bg-body: radial-gradient(circle at top, rgba(184, 111, 75, 0.15), transparent 34%), linear-gradient(180deg, #fbf8f2, #f7f3ec 32%, #f3ede3 100%);
+    --bg-halo: radial-gradient(circle at top, rgba(184, 111, 75, 0.12), transparent 46%);
+    --bg-wash: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.2));
+
+    /* ── Typography ── */
+    --font-display-family: 'Fraunces', Georgia, serif;
+    --font-display-settings: 'SOFT' 100, 'WONK' 1;
+
     font-family: 'Roboto Condensed', ui-sans-serif, system-ui, sans-serif;
-    color: #2e2924;
-    background:
-      radial-gradient(circle at top, rgba(184, 111, 75, 0.15), transparent 34%),
-      linear-gradient(180deg, #fbf8f2, #f7f3ec 32%, #f3ede3 100%);
+    color: rgb(var(--color-ink));
+    background: var(--bg-body);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Sweet mode overrides ── */
+  html.sweet-mode {
+    --color-cream: 214 238 255;
+    --color-parchment: 235 245 255;
+    --color-oat: 200 228 255;
+    --color-taupe: 168 203 240;
+    --color-ink: 26 58 92;
+    --color-olive-gray: 74 104 133;
+    --color-sage: 106 158 191;
+    --color-terracotta: 212 123 154;
+
+    --bg-body: radial-gradient(circle at top, rgba(100, 160, 220, 0.15), transparent 34%), linear-gradient(180deg, #ebf5ff, #d6eeff 32%, #c8e4ff 100%);
+    --bg-halo: radial-gradient(circle at top, rgba(100, 160, 220, 0.12), transparent 46%);
+    --bg-wash: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(214,238,255,0.4));
+
+    --font-display-family: 'Modak', cursive;
+    --font-display-settings: normal;
   }
 
   html,
@@ -22,7 +58,7 @@
   #root {
     height: 100%;
     min-height: 100%;
-    background-color: #f7f3ec;
+    background-color: rgb(var(--color-cream));
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
@@ -63,7 +99,8 @@
   }
 
   .font-display {
-    font-variation-settings: 'SOFT' 100, 'WONK' 1;
+    font-family: var(--font-display-family);
+    font-variation-settings: var(--font-display-settings);
   }
 }
 
@@ -84,6 +121,24 @@
     background-size: 15px 15px, auto;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+  }
+
+  html.sweet-mode .grain-bg {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(26, 58, 92, 0.04) 1px, transparent 0),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(214, 238, 255, 0));
+  }
+
+  /* ── Mode-switch colour wash animation ── */
+  @keyframes sweetModeWash {
+    0%   { opacity: 0.75; clip-path: circle(0% at 50% 0%); }
+    45%  { opacity: 0.75; clip-path: circle(130% at 50% 0%); }
+    100% { opacity: 0;    clip-path: circle(130% at 50% 0%); }
+  }
+
+  .sweet-wash-overlay {
+    background-color: rgb(var(--color-cream));
+    animation: sweetModeWash 700ms cubic-bezier(0.4, 0, 0.2, 1) both;
   }
 
   @media (orientation: landscape) and (max-height: 700px) and (max-width: 950px) {

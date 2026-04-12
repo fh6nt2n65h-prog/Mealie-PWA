@@ -2,6 +2,7 @@ import dayjs from 'dayjs'
 import { useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { HeaderSlotsProvider, useHeaderSlotState } from '@/app/header-slots-context'
+import { useSettings } from '@/app/settings-context'
 import { BottomNav } from '@/components/bottom-nav'
 
 function resolveTitle(pathname: string) {
@@ -27,11 +28,15 @@ function resolveTitle(pathname: string) {
 function AppShellFrame({ children }: { children: ReactNode }) {
   const location = useLocation()
   const slots = useHeaderSlotState()
+  const { isAnimating } = useSettings()
 
   return (
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-halo bg-[length:100%_100%]">
       <div className="app-shell-frame flex h-full flex-col overflow-hidden bg-cream/95">
-        <header className="safe-top border-b border-b-taupe/70 bg-wash px-5 pb-3 pt-4 sm:px-7 sm:pb-4 sm:pt-5">
+        <header
+          className="safe-top border-b border-b-taupe/70 bg-wash px-5 pb-3 pt-4 sm:px-7 sm:pb-4 sm:pt-5"
+          {...(slots.headerTouchHandlers ?? {})}
+        >
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1 max-w-[32rem] animate-rise">
               <p className="truncate whitespace-nowrap text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">{dayjs().format('dddd, MMMM D')}</p>
@@ -51,6 +56,14 @@ function AppShellFrame({ children }: { children: ReactNode }) {
           <BottomNav />
         </div>
       </div>
+
+      {/* Full-screen colour-wash overlay that plays when mode switches */}
+      {isAnimating && (
+        <div
+          aria-hidden="true"
+          className="sweet-wash-overlay pointer-events-none fixed inset-0 z-50"
+        />
+      )}
     </div>
   )
 }
