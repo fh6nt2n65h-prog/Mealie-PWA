@@ -641,8 +641,15 @@ export function RecipeDetailPage() {
         
         await api.uploadRecipeImage(refreshed.id, imageFile, ext)
                 const nextImageVersion = Date.now().toString()
+                const apiDetail = await api.getRecipe(refreshed.slug)
                 refreshed = {
-                  ...await api.getRecipe(refreshed.slug),
+                  ...apiDetail,
+                  // If Mealie still reports an external URL in the image field (scraped recipes),
+                  // clear it so getRecipeImageUrl builds the Mealie media endpoint URL instead,
+                  // which will correctly serve the newly uploaded file.
+                  image: typeof apiDetail.image === 'string' && (apiDetail.image as string).startsWith('http')
+                    ? null
+                    : apiDetail.image,
                   clientImageVersion: nextImageVersion,
                 }
         URL.revokeObjectURL(imagePreviewUrl ?? '')
