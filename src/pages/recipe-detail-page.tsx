@@ -608,8 +608,8 @@ export function RecipeDetailPage() {
           text: s.text,
         })),
       }
-      await api.updateRecipe(recipe.slug, payload)
-      let refreshed = await api.getRecipe(recipe.slug)
+      const updatedRecipe = await api.updateRecipe(recipe.slug, payload)
+      let refreshed = updatedRecipe
       if (imageFile && refreshed.id) {
         // Extract extension from filename, validate it
         let ext = imageFile.name.split('.').pop()?.toLowerCase()
@@ -653,6 +653,9 @@ export function RecipeDetailPage() {
       setServings(refreshed.recipeServings || 1)
       upsertRecipeCacheEntry(settings, refreshed)
       invalidateRecipesLoadedThisSession(settings)
+      if (slug && refreshed.slug !== slug) {
+        navigate(`/recipes/${refreshed.slug}`, { replace: true })
+      }
       setEditOpen(false)
     } catch (saveErr) {
       console.error('Save error:', saveErr)
