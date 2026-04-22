@@ -67,13 +67,17 @@ export class MealieApiError extends Error {
 export class MealieApi {
   private settings: ApiSettings
   private static readonly REQUEST_TIMEOUT_MS = 30000
-  private static readonly MAX_CONCURRENT_REQUESTS = 3
-  private static readonly MIN_REQUEST_SPACING_MS = 200
+  private static readonly MAX_CONCURRENT_REQUESTS = 1
+  private static readonly MIN_REQUEST_SPACING_MS = 350
+  private static readonly USER_CACHE_TTL_MS = 120000
+  private static readonly FAVORITES_CACHE_TTL_MS = 120000
   private static activeRequestCount = 0
   private static queue: Array<() => void> = []
   private static nextRequestAllowedAt = 0
   private static queueTimer: ReturnType<typeof setTimeout> | null = null
   private static inflightGetRequests = new Map<string, Promise<unknown>>()
+  private static currentUserCache = new Map<string, { value: UserProfile; expiresAt: number }>()
+  private static favoritesCache = new Map<string, { value: UserRatings; expiresAt: number }>()
 
   constructor(settings: ApiSettings) {
     this.settings = settings
@@ -85,6 +89,10 @@ export class MealieApi {
 
   private get baseUrl() {
     return buildApiBaseUrl(this.settings.baseUrl)
+  }
+
+  private get authCacheKey() {
+    return `${this.baseUrl}::${this.settings.apiToken || ''}`
   }
 
   private static runWithQueue<T>(operation: () => Promise<T>): Promise<T> {
@@ -243,7 +251,21 @@ export class MealieApi {
   }
 
   async getCurrentUser() {
-    return this.request<UserProfile>('/users/self')
+    const now = Date.now()
+    const cacheKey = this.authCacheKey
+    const cached = MealieApi.currentUserCache.get(cacheKey)
+
+    if (cached && cached.expiresAt > now) {
+      return cached.value
+    }
+
+    const user = await this.request<UserProfile>('/users/self')
+    MealieApi.currentUserCache.set(cacheKey, {
+      value: user,
+      expiresAt: now + MealieApi.USER_CACHE_TTL_MS
+    })
+
+    return user
   }
 
   async getRecipes() {
@@ -462,19 +484,39 @@ export class MealieApi {
   }
 
   async getUserFavorites(userId: string) {
-    return this.request<UserRatings>(`/users/${encodeURIComponent(userId)}/favorites`)
+    const now = Date.now()
+    const cacheKey = `${this.authCacheKey}::${encodeURIComponent(userId)}`
+    const cached = MealieApi.favoritesCache.get(cacheKey)
+
+    if (cached && cached.expiresAt > now) {
+      return cached.value
+    }
+
+    const favorites = await this.request<UserRatings>(`/users/${encodeURIComponent(userId)}/favorites`)
+    MealieApi.favoritesCache.set(cacheKey, {
+      value: favorites,
+      expiresAt: now + MealieApi.FAVORITES_CACHE_TTL_MS
+    })
+
+    return favorites
   }
 
   async addFavorite(userId: string, slug: string) {
-    return this.request<void>(`/users/${encodeURIComponent(userId)}/favorites/${encodeURIComponent(slug)}`, {
+    const response = await this.request<void>(`/users/${encodeURIComponent(userId)}/favorites/${encodeURIComponent(slug)}`, {
       method: 'POST'
     })
+
+    MealieApi.favoritesCache.delete(`${this.authCacheKey}::${encodeURIComponent(userId)}`)
+    return response
   }
 
   async removeFavorite(userId: string, slug: string) {
-    return this.request<void>(`/users/${encodeURIComponent(userId)}/favorites/${encodeURIComponent(slug)}`, {
+    const response = await this.request<void>(`/users/${encodeURIComponent(userId)}/favorites/${encodeURIComponent(slug)}`, {
       method: 'DELETE'
     })
+
+    MealieApi.favoritesCache.delete(`${this.authCacheKey}::${encodeURIComponent(userId)}`)
+    return response
   }
 
   async getCategories() {

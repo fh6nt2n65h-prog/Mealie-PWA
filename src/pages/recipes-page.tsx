@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import dayjs from 'dayjs'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowRight, CalendarPlus, Camera, ImagePlus, Link as LinkIcon, Plus, RefreshCw, Search, Trash2, X } from 'lucide-react'
-import type { PlanEntryType, Recipe, RecipeSummary, ViewMode } from '@/types/mealie'
+import type { PlanEntryType, Recipe, ViewMode } from '@/types/mealie'
 import { useHeaderSlots } from '@/app/header-slots-context'
 import { useSettings } from '@/app/settings-context'
 import { useHeaderPullToggle } from '@/hooks/use-header-pull-toggle'
@@ -77,30 +77,6 @@ function buildCalendarDays() {
 
 const MEAL_PLAN_DAYS = buildCalendarDays()
 const QUICK_MEAL_TYPES: PlanEntryType[] = ['breakfast', 'lunch', 'dinner']
-
-async function hydrateRecipes(api: MealieApi, summaries: RecipeSummary[]) {
-  const hydrated: Recipe[] = []
-
-  for (let index = 0; index < summaries.length; index += 4) {
-    const batch = summaries.slice(index, index + 4)
-    const results = await Promise.allSettled(batch.map((recipe) => api.getRecipe(recipe.slug)))
-
-    results.forEach((result, resultIndex) => {
-      if (result.status === 'fulfilled') {
-        hydrated.push(result.value)
-      } else {
-        const fallback = batch[resultIndex]
-        hydrated.push({
-          ...fallback,
-          recipeIngredient: [],
-          recipeInstructions: []
-        })
-      }
-    })
-  }
-
-  return hydrated
-}
 
 export function RecipesPage() {
   const navigate = useNavigate()
@@ -198,15 +174,15 @@ export function RecipesPage() {
         return
       }
 
-      const detailedRecipes = await hydrateRecipes(api, response.items)
+      const lightweightRecipes: Recipe[] = response.items.map((summary) => ({
+        ...summary,
+        recipeIngredient: [],
+        recipeInstructions: []
+      }))
 
-      if (requestIdRef.current !== requestId) {
-        return
-      }
-
-      setRecipeCache(settings, detailedRecipes)
+      setRecipeCache(settings, lightweightRecipes)
       markRecipesLoadedThisSession(settings)
-      setRecipes(detailedRecipes)
+      setRecipes(lightweightRecipes)
     } catch (loadError) {
       if (requestIdRef.current === requestId) {
         setError(loadError instanceof Error ? loadError.message : 'Unable to load recipes right now.')

@@ -135,7 +135,11 @@ export function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
 
-export function toIngredientText(recipe: Recipe) {
+export function toIngredientText(recipe: Recipe | RecipeSummary) {
+  if (!('recipeIngredient' in recipe) || !Array.isArray(recipe.recipeIngredient)) {
+    return ''
+  }
+
   return recipe.recipeIngredient
     .map((ingredient) => {
       const parts = [
@@ -154,7 +158,7 @@ export function toIngredientText(recipe: Recipe) {
     .toLowerCase()
 }
 
-export function matchesRecipeQuery(recipe: Recipe, query: string) {
+export function matchesRecipeQuery(recipe: Recipe | RecipeSummary, query: string) {
   const normalizedQuery = query.trim().toLowerCase()
 
   if (!normalizedQuery) {
@@ -162,9 +166,10 @@ export function matchesRecipeQuery(recipe: Recipe, query: string) {
   }
 
   const title = recipe.name?.toLowerCase() || ''
+  const description = recipe.description?.toLowerCase() || ''
   const ingredients = toIngredientText(recipe)
 
-  return title.includes(normalizedQuery) || ingredients.includes(normalizedQuery)
+  return title.includes(normalizedQuery) || description.includes(normalizedQuery) || ingredients.includes(normalizedQuery)
 }
 
 export function getShoppingItemText(item: ShoppingListItem) {
