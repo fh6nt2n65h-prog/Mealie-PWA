@@ -140,15 +140,15 @@ export function ShoppingListPage() {
     setItems([])
 
     const api = new MealieApi(settings)
-    const results = await Promise.allSettled(
-      toDelete.map((item) => api.deleteShoppingItem(item.id))
-    )
+    const failedIds = new Set<string>()
 
-    const failedIds = new Set(
-      toDelete
-        .filter((_, i) => results[i]?.status === 'rejected')
-        .map((item) => item.id)
-    )
+    for (const item of toDelete) {
+      try {
+        await api.deleteShoppingItem(item.id)
+      } catch {
+        failedIds.add(item.id)
+      }
+    }
 
     const remaining = toDelete.filter((item) => failedIds.has(item.id))
     setItems(remaining)

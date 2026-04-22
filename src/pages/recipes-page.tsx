@@ -81,8 +81,8 @@ const QUICK_MEAL_TYPES: PlanEntryType[] = ['breakfast', 'lunch', 'dinner']
 async function hydrateRecipes(api: MealieApi, summaries: RecipeSummary[]) {
   const hydrated: Recipe[] = []
 
-  for (let index = 0; index < summaries.length; index += 12) {
-    const batch = summaries.slice(index, index + 12)
+  for (let index = 0; index < summaries.length; index += 4) {
+    const batch = summaries.slice(index, index + 4)
     const results = await Promise.allSettled(batch.map((recipe) => api.getRecipe(recipe.slug)))
 
     results.forEach((result, resultIndex) => {

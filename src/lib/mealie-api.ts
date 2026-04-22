@@ -67,6 +67,13 @@ export class MealieApiError extends Error {
 export class MealieApi {
   private settings: ApiSettings
   private static readonly REQUEST_TIMEOUT_MS = 30000
+  private static readonly MAX_CONCURRENT_REQUESTS = 3
+  private static readonly MIN_REQUEST_SPACING_MS = 200
+  private static activeRequestCount = 0
+  private static queue: Array<() => void> = []
+  private static nextRequestAllowedAt = 0
+  private static queueTimer: ReturnType<typeof setTimeout> | null = null
+  private static inflightGetRequests = new Map<string, Promise<unknown>>()
 
   constructor(settings: ApiSettings) {
     this.settings = settings
@@ -80,30 +87,62 @@ export class MealieApi {
     return buildApiBaseUrl(this.settings.baseUrl)
   }
 
-  private async request<T>(path: string, init?: RequestInit): Promise<T> {
-    const headers = new Headers(init?.headers)
-    headers.set('Accept', 'application/json')
+  private static runWithQueue<T>(operation: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const run = () => {
+        MealieApi.activeRequestCount += 1
+        MealieApi.nextRequestAllowedAt = Date.now() + MealieApi.MIN_REQUEST_SPACING_MS
 
-    if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json')
+        operation()
+          .then(resolve)
+          .catch(reject)
+          .finally(() => {
+            MealieApi.activeRequestCount = Math.max(0, MealieApi.activeRequestCount - 1)
+            MealieApi.drainQueue()
+          })
+      }
+
+      MealieApi.queue.push(run)
+      MealieApi.drainQueue()
+    })
+  }
+
+  private static drainQueue() {
+    if (MealieApi.activeRequestCount >= MealieApi.MAX_CONCURRENT_REQUESTS) {
+      return
     }
 
-    if (this.settings.apiToken) {
-      headers.set('Authorization', `Bearer ${this.settings.apiToken}`)
+    if (MealieApi.queue.length === 0) {
+      return
     }
 
-    const requestUrl = `${this.baseUrl}${path}`
+    const waitMs = MealieApi.nextRequestAllowedAt - Date.now()
 
-    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && requestUrl.startsWith('http:')) {
-      throw new MealieApiError(
-        'Your PWA is running on HTTPS, but the Mealie API is HTTP. Browsers block that request. Put Mealie behind HTTPS or open the app over HTTP for local testing.',
-        0
-      )
+    if (waitMs > 0) {
+      if (MealieApi.queueTimer === null) {
+        MealieApi.queueTimer = setTimeout(() => {
+          MealieApi.queueTimer = null
+          MealieApi.drainQueue()
+        }, waitMs)
+      }
+
+      return
     }
 
+    const next = MealieApi.queue.shift()
+
+    if (!next) {
+      return
+    }
+
+    next()
+    MealieApi.drainQueue()
+  }
+
+  private async performRequest<T>(requestUrl: string, headers: Headers, init?: RequestInit): Promise<T> {
     let response: Response
     const controller = new AbortController()
-    const timeoutId = window.setTimeout(() => controller.abort(), MealieApi.REQUEST_TIMEOUT_MS)
+    const timeoutId = setTimeout(() => controller.abort(), MealieApi.REQUEST_TIMEOUT_MS)
 
     try {
       response = await fetch(requestUrl, {
@@ -121,7 +160,7 @@ export class MealieApi {
         0
       )
     } finally {
-      window.clearTimeout(timeoutId)
+      clearTimeout(timeoutId)
     }
 
     if (!response.ok) {
@@ -156,6 +195,51 @@ export class MealieApi {
     }
 
     return response.json() as Promise<T>
+  }
+
+  private async request<T>(path: string, init?: RequestInit): Promise<T> {
+    const headers = new Headers(init?.headers)
+    headers.set('Accept', 'application/json')
+
+    if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json')
+    }
+
+    if (this.settings.apiToken) {
+      headers.set('Authorization', `Bearer ${this.settings.apiToken}`)
+    }
+
+    const requestUrl = `${this.baseUrl}${path}`
+    const method = (init?.method || 'GET').toUpperCase()
+
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:' && requestUrl.startsWith('http:')) {
+      throw new MealieApiError(
+        'Your PWA is running on HTTPS, but the Mealie API is HTTP. Browsers block that request. Put Mealie behind HTTPS or open the app over HTTP for local testing.',
+        0
+      )
+    }
+
+    const shouldDedupe = method === 'GET' && !init?.body
+    const dedupeKey = shouldDedupe ? `${requestUrl}::${this.settings.apiToken || ''}` : null
+
+    if (dedupeKey) {
+      const inflight = MealieApi.inflightGetRequests.get(dedupeKey)
+
+      if (inflight) {
+        return inflight as Promise<T>
+      }
+    }
+
+    const pendingRequest = MealieApi.runWithQueue(() => this.performRequest<T>(requestUrl, headers, init))
+
+    if (dedupeKey) {
+      MealieApi.inflightGetRequests.set(dedupeKey, pendingRequest)
+      pendingRequest.finally(() => {
+        MealieApi.inflightGetRequests.delete(dedupeKey)
+      })
+    }
+
+    return pendingRequest
   }
 
   async getCurrentUser() {
