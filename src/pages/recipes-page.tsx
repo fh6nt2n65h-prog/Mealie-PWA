@@ -16,6 +16,7 @@ import { SwipeRecipeDeck } from '@/components/swipe-recipe-deck'
 import { useStoredState } from '@/hooks/use-stored-state'
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh'
 import { RECIPE_CACHE_UPDATED_EVENT, getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
+import { normalizeImportedImage } from '@/lib/import-images'
 import { MealieApi } from '@/lib/mealie-api'
 import { loadFavorites, loadViewMode, saveFavorites, saveViewMode } from '@/lib/storage'
 import { clamp, formatDayLabel, matchesRecipeQuery } from '@/lib/utils'
@@ -94,6 +95,7 @@ export function RecipesPage() {
   const [recipeUrl, setRecipeUrl] = useState('')
   const [selectedImages, setSelectedImages] = useState<File[]>([])
   const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([])
+  const [processingImages, setProcessingImages] = useState(false)
   const [creatingRecipe, setCreatingRecipe] = useState(false)
   const [createError, setCreateError] = useState('')
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null)
@@ -107,6 +109,7 @@ export function RecipesPage() {
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const requestIdRef = useRef(0)
+  const imageSelectionRequestIdRef = useRef(0)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
   const cameraInputRef = useRef<HTMLInputElement | null>(null)
@@ -127,12 +130,14 @@ export function RecipesPage() {
   }
 
   function resetCreateDialog() {
+    imageSelectionRequestIdRef.current += 1
     revokePreviewUrls(imagePreviewUrls)
     setShowCreateDialog(false)
     setCreateMode('menu')
     setRecipeUrl('')
     setSelectedImages([])
     setImagePreviewUrls([])
+    setProcessingImages(false)
     setCreateError('')
     setCreatingRecipe(false)
     if (uploadInputRef.current) {
@@ -427,7 +432,7 @@ export function RecipesPage() {
   }
 
   async function handleCreateFromImages() {
-    if (selectedImages.length === 0 || creatingRecipe) {
+    if (selectedImages.length === 0 || creatingRecipe || processingImages) {
       return
     }
 
@@ -444,20 +449,45 @@ export function RecipesPage() {
     }
   }
 
-  function handleImageSelection(event: ChangeEvent<HTMLInputElement>) {
+  async function handleImageSelection(event: ChangeEvent<HTMLInputElement>) {
     const files = event.target.files ? Array.from(event.target.files) : []
+    const selectionRequestId = imageSelectionRequestIdRef.current + 1
+
+    imageSelectionRequestIdRef.current = selectionRequestId
+
+    event.target.value = ''
 
     if (files.length === 0) {
       return
     }
 
-    const nextPreviewUrls = files.map((file) => URL.createObjectURL(file))
+    setProcessingImages(true)
+    setCreateError('')
 
-    setSelectedImages((current) => [...current, ...files])
-    setImagePreviewUrls((current) => [...current, ...nextPreviewUrls])
+    try {
+      const normalizedFiles: File[] = []
 
-    // Reset input so selecting the same image again still triggers onChange.
-    event.target.value = ''
+      for (const file of files) {
+        normalizedFiles.push(await normalizeImportedImage(file))
+      }
+
+      if (imageSelectionRequestIdRef.current !== selectionRequestId) {
+        return
+      }
+
+      const nextPreviewUrls = normalizedFiles.map((file) => URL.createObjectURL(file))
+
+      setSelectedImages((current) => [...current, ...normalizedFiles])
+      setImagePreviewUrls((current) => [...current, ...nextPreviewUrls])
+    } catch (imageError) {
+      if (imageSelectionRequestIdRef.current === selectionRequestId) {
+        setCreateError(imageError instanceof Error ? imageError.message : 'Unable to prepare those images.')
+      }
+    } finally {
+      if (imageSelectionRequestIdRef.current === selectionRequestId) {
+        setProcessingImages(false)
+      }
+    }
   }
 
   function removeImage(index: number) {
@@ -734,9 +764,10 @@ export function RecipesPage() {
                         void handleCreateFromImages()
                       }
                     }}
-                    className="inline-flex items-center justify-center rounded-full bg-olive px-5 py-3 text-sm font-semibold text-parchment"
+                    disabled={creatingRecipe || processingImages}
+                    className="inline-flex items-center justify-center rounded-full bg-olive px-5 py-3 text-sm font-semibold text-parchment disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {creatingRecipe ? 'Importing…' : createMode === 'url' ? 'Import recipe' : 'Create from image'}
+                    {creatingRecipe ? 'Importing…' : processingImages ? 'Optimizing images…' : createMode === 'url' ? 'Import recipe' : 'Create from image'}
                   </button>
                 </div>
               )
@@ -789,20 +820,24 @@ export function RecipesPage() {
               <button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-taupe bg-cream px-5 py-3 text-sm font-semibold text-ink"
+                disabled={processingImages || creatingRecipe}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-taupe bg-cream px-5 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Camera className="h-4 w-4" />
-                Take photo
+                {processingImages ? 'Optimizing…' : 'Take photo'}
               </button>
               <button
                 type="button"
                 onClick={() => uploadInputRef.current?.click()}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-taupe bg-cream px-5 py-3 text-sm font-semibold text-ink"
+                disabled={processingImages || creatingRecipe}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-taupe bg-cream px-5 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <ImagePlus className="h-4 w-4" />
-                Upload image
+                {processingImages ? 'Optimizing…' : 'Upload image'}
               </button>
             </div>
+
+            {processingImages && <p className="text-sm leading-6 text-oliveGray">Photos are resized on-device before upload to reduce heat, memory use, and transfer size.</p>}
 
             {imagePreviewUrls.length > 0 && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
