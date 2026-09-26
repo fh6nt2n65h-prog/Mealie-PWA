@@ -132,6 +132,7 @@ export function RecipeDetailPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null)
   const [editFormSeed, setEditFormSeed] = useState(0)
+  const [pendingIngredientRemoval, setPendingIngredientRemoval] = useState<number | null>(null)
 
   const buttonsRowRef = useRef<HTMLDivElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
@@ -381,6 +382,7 @@ export function RecipeDetailPage() {
     setEditFormSeed((seed) => seed + 1)
     setEditError('')
     setConvertStatus(null)
+    setPendingIngredientRemoval(null)
     if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl)
     setImageFile(null)
     setImagePreviewUrl(null)
@@ -409,6 +411,15 @@ export function RecipeDetailPage() {
 
   function removeIngredient(idx: number) {
     setEditDraft((d) => ({ ...d, ingredients: d.ingredients.filter((_, i) => i !== idx) }))
+  }
+
+  function confirmRemoveIngredient() {
+    if (pendingIngredientRemoval === null) {
+      return
+    }
+
+    removeIngredient(pendingIngredientRemoval)
+    setPendingIngredientRemoval(null)
   }
 
   function clearIngredientNote(idx: number) {
@@ -1032,8 +1043,9 @@ export function RecipeDetailPage() {
                         </button>
                       )}
                     </div>
-                    <button type="button" onClick={() => removeIngredient(idx)}
-                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta text-xs font-bold">×</button>
+                    <button type="button" onClick={() => setPendingIngredientRemoval(idx)}
+                      className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta text-xs font-bold"
+                      aria-label={`Remove ${draft.food.trim() || 'ingredient'}`}>×</button>
                   </div>
                 </li>
               ))}
@@ -1070,6 +1082,15 @@ export function RecipeDetailPage() {
           {editError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{editError}</p>}
         </div>
       </DialogSheet>
+
+      <ConfirmDialog
+        open={pendingIngredientRemoval !== null}
+        title="Delete ingredient"
+        description="Do you really want to delete this ingredient?"
+        confirmLabel="Delete ingredient"
+        onCancel={() => setPendingIngredientRemoval(null)}
+        onConfirm={confirmRemoveIngredient}
+      />
 
       <ConfirmDialog
         open={confirmDeleteOpen}
