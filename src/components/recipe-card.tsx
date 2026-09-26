@@ -101,8 +101,8 @@ export function RecipeCard({ recipe, baseUrl, onClick, onLongPress, onToggleFavo
 
         <div className={clsx('space-y-3', compact ? 'py-1' : 'flex flex-1 flex-col px-5 pb-5 pt-2')}>
           <div className="space-y-2">
-            <p className="text-[0.75rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{formatDuration(recipe.totalTime)}</p>
-            <h3 className={clsx('line-clamp-2 leading-tight tracking-[-0.03em] text-ink', featured ? 'min-h-[3.75rem] font-display text-2xl' : 'min-h-[3.1rem] font-display text-xl')}>{recipe.name || 'Untitled recipe'}</h3>
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{formatDuration(recipe.totalTime)}</p>
+            <h3 className={clsx('line-clamp-2 leading-tight tracking-[-0.03em] text-ink', featured ? 'min-h-[3.75rem] font-display text-[1.65rem]' : 'min-h-[3.1rem] font-display text-[1.375rem]')}>{recipe.name || 'Untitled recipe'}</h3>
           </div>
 
           <p className={clsx('text-oliveGray', featured ? 'line-clamp-4 min-h-[5.25rem] text-base leading-7' : 'line-clamp-3 min-h-[4.4rem] text-sm leading-6')}>{recipe.description || 'A quiet favorite waiting to be cooked again.'}</p>
