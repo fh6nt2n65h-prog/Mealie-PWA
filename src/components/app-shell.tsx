@@ -40,9 +40,9 @@ function AppShellFrame({ children }: { children: ReactNode }) {
         >
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="min-w-0 flex-1 max-w-[32rem] animate-rise">
-              <p className="truncate whitespace-nowrap text-[0.68rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">{dayjs().format('dddd, MMMM D')}</p>
+              <p className="truncate whitespace-nowrap text-[0.75rem] font-semibold uppercase tracking-[0.2em] text-oliveGray">{dayjs().format('dddd, MMMM D')}</p>
               <motion.h1 
-                className="mt-2 font-display text-[2.35rem] leading-none tracking-[-0.03em] text-ink sm:text-[3.25rem]"
+                className="mt-2 font-display text-[1.75rem] leading-[1.05] tracking-[-0.03em] text-ink sm:text-[2.4rem]"
                 initial={{ scale: 1 }}
                 animate={isAnimating ? { scale: [0.95, 1.05, 1] } : { scale: 1 }}
                 transition={isAnimating ? { duration: 0.5, delay: 0.15, ease: "easeOut" } : { duration: 0 }}

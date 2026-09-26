@@ -9,7 +9,7 @@ export function SettingField({ label, description, ...props }: SettingFieldProps
   return (
     <label className="block space-y-2.5">
       <div>
-        <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{label}</p>
+        <p className="text-[0.75rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{label}</p>
         {description ? <p className="mt-1 text-sm leading-6 text-oliveGray">{description}</p> : null}
       </div>
       <input

@@ -41,10 +41,36 @@ export default defineConfig({
                 ]
             },
             workbox: {
-                globPatterns: ['**/*.{js,css,html,svg,png,webp}']
+                globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
+                runtimeCaching: [
+                    {
+                        // Recipe photos live behind Mealie and are content-versioned, so serving
+                        // them from cache is safe and lets the installed PWA work offline.
+                        urlPattern: function (_a) {
+                            var url = _a.url;
+                            return url.pathname.includes('/api/media/');
+                        },
+                        handler: 'CacheFirst',
+                        options: {
+                            cacheName: 'mealie-media',
+                            expiration: { maxEntries: 300, maxAgeSeconds: 2592000, purgeOnQuotaError: true },
+                            cacheableResponse: { statuses: [0, 200] }
+                        }
+                    }
+                ]
             }
         })
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    react: ['react', 'react-dom', 'react-router-dom'],
+                    motion: ['framer-motion']
+                }
+            }
+        }
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src')

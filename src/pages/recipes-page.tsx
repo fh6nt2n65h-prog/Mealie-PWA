@@ -581,7 +581,7 @@ export function RecipesPage() {
     bottomContent: headerPullDistance > 0 ? (
       <div className="flex justify-center pointer-events-none" aria-hidden="true">
         <div
-          className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper"
+          className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper"
           style={{
             opacity: Math.min(1, headerPullDistance / headerPullThreshold),
             transform: `translateY(${Math.min(headerPullDistance * 0.35, 12)}px)`
@@ -638,7 +638,7 @@ export function RecipesPage() {
           onClick={() => setShowFavoritesOnly((v) => !v)}
           className={`inline-flex h-10 w-10 items-center justify-center rounded-full border shadow-paper transition-colors ${
             showFavoritesOnly
-              ? 'border-terracotta/40 bg-terracotta/10 text-terracotta'
+              ? 'border-terracotta/40 bg-terracotta/10 text-terracottaDeep'
               : 'border-taupe bg-parchment text-oliveGray'
           }`}
           aria-label={showFavoritesOnly ? 'Show all recipes' : 'Show favorites only'}
@@ -683,7 +683,7 @@ export function RecipesPage() {
       <div className={`animate-rise ${viewMode === 'swipe' ? 'flex h-full flex-col' : 'space-y-4'}`} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div className="sticky top-0 z-10 flex h-0 justify-center overflow-visible pointer-events-none" aria-hidden="true">
           <div
-            className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper transition-transform duration-200"
+            className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper transition-transform duration-200"
             style={{ transform: `translateY(${refreshing || pullDistance ? 10 : -70}px)` }}
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -781,7 +781,7 @@ export function RecipesPage() {
               className="rounded-[1.2rem] border border-taupe bg-cream px-4 py-3.5 text-left shadow-paper"
             >
               <LinkIcon className="h-5 w-5 text-terracotta" />
-              <p className="mt-2 font-display text-xl tracking-[-0.03em] text-ink">Add via URL</p>
+              <p className="mt-2 font-display text-lg tracking-[-0.03em] text-ink">Add via URL</p>
               <p className="mt-1 text-xs leading-5 text-oliveGray">Paste a link and let Mealie scrape it.</p>
             </button>
             <button
@@ -790,7 +790,7 @@ export function RecipesPage() {
               className="rounded-[1.2rem] border border-taupe bg-cream px-4 py-3.5 text-left shadow-paper"
             >
               <ImagePlus className="h-5 w-5 text-terracotta" />
-              <p className="mt-2 font-display text-xl tracking-[-0.03em] text-ink">Add via image</p>
+              <p className="mt-2 font-display text-lg tracking-[-0.03em] text-ink">Add via image</p>
               <p className="mt-1 text-xs leading-5 text-oliveGray">Upload or capture a recipe photo.</p>
             </button>
           </div>
@@ -807,7 +807,7 @@ export function RecipesPage() {
                 className="w-full rounded-[1.25rem] border border-taupe bg-cream px-4 py-3 text-sm text-ink outline-none"
               />
             </label>
-            {createError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{createError}</p>}
+            {createError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracottaDeep">{createError}</p>}
           </div>
         )}
 
@@ -843,7 +843,7 @@ export function RecipesPage() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {imagePreviewUrls.map((previewUrl, index) => (
                   <div key={`${previewUrl}-${index}`} className="relative">
-                    <img src={previewUrl} alt="Recipe import preview" className="aspect-square w-full rounded-[1.2rem] object-cover" />
+                    <img src={previewUrl} alt="Recipe import preview" decoding="async" className="aspect-square w-full rounded-[1.2rem] object-cover" />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
@@ -857,7 +857,7 @@ export function RecipesPage() {
               </div>
             )}
 
-            {createError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{createError}</p>}
+            {createError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracottaDeep">{createError}</p>}
           </div>
         )}
       </DialogSheet>
@@ -905,11 +905,11 @@ export function RecipesPage() {
             >
               <Trash2 className="h-5 w-5 text-terracotta" />
               <div>
-                <p className="font-semibold text-terracotta">Delete recipe</p>
-                <p className="text-sm leading-6 text-terracotta/80">Remove this recipe from Mealie.</p>
+                <p className="font-semibold text-terracottaDeep">Delete recipe</p>
+                <p className="text-sm leading-6 text-terracottaDeep">Remove this recipe from Mealie.</p>
               </div>
             </button>
-            {actionError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{actionError}</p>}
+            {actionError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracottaDeep">{actionError}</p>}
           </div>
         )}
 
@@ -926,7 +926,7 @@ export function RecipesPage() {
                       key={day.key}
                       type="button"
                       onClick={() => setMealPlanDate(day.key)}
-                      className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.72rem] font-semibold transition-colors ${isSelected ? 'border-ink bg-ink text-parchment' : 'border-taupe bg-cream text-oliveGray'}`}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.75rem] font-semibold transition-colors ${isSelected ? 'border-ink bg-ink text-parchment' : 'border-taupe bg-cream text-oliveGray'}`}
                     >
                       {day.label}
                     </button>
@@ -953,7 +953,7 @@ export function RecipesPage() {
                 })}
               </div>
             </div>
-            {actionError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{actionError}</p>}
+            {actionError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracottaDeep">{actionError}</p>}
           </div>
         )}
       </DialogSheet>

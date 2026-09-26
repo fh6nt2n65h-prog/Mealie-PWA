@@ -1,5 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,SOFT,WONK,wght@9..144,100,1,400;9..144,100,1,600&family=Roboto+Condensed:wght@400;500;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=DynaPuff:wdth,wght@75..100,400..700&display=swap');
+/* ── Self-hosted faces (latin subsets, 94 kB total, no third-party request) ── */
+@font-face {
+  font-family: 'Literata';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/literata-latin-400-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Schibsted Grotesk';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('./assets/fonts/schibsted-grotesk-latin-400-900.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Gabarito';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./assets/fonts/gabarito-latin-400-700.woff2') format('woff2');
+}
 
 @tailwind base;
 @tailwind components;
@@ -16,7 +38,11 @@
     --color-olive-gray: 111 104 95;
     --color-sage: 158 170 146;
     --color-terracotta: 184 111 75;
+    /* Deeper terracotta for error text on its own tint (5.0:1 on the tint) */
+    --color-terracotta-deep: 154 78 51;
     --color-olive: 123 122 75;
+    /* Deeper olive for text on sage-tinted chips and notices (7:1 on the tint) */
+    --color-olive-deep: 79 78 43;
 
     /* ── Background gradients ── */
     --bg-body: radial-gradient(circle at top, rgba(184, 111, 75, 0.15), transparent 34%), linear-gradient(180deg, #fbf8f2, #f7f3ec 32%, #f3ede3 100%);
@@ -24,10 +50,10 @@
     --bg-wash: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(247,243,236,0.2));
 
     /* ── Typography ── */
-    --font-display-family: 'Fraunces', Georgia, serif;
-    --font-display-settings: 'SOFT' 100, 'WONK' 1;
+    --font-display-family: 'Literata', Georgia, serif;
+    --font-display-settings: normal;
 
-    font-family: 'Roboto Condensed', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Schibsted Grotesk', ui-sans-serif, system-ui, sans-serif;
     color: rgb(var(--color-ink));
     background: var(--bg-body);
     font-synthesis: none;
@@ -46,13 +72,15 @@
     --color-olive-gray: 74 104 133;
     --color-sage: 106 158 191;
     --color-terracotta: 212 123 154;
+    --color-terracotta-deep: 156 58 94;
     --color-olive: 86 133 185;
+    --color-olive-deep: 42 84 130;
 
     --bg-body: radial-gradient(circle at top, rgba(100, 160, 220, 0.15), transparent 34%), linear-gradient(180deg, #ebf5ff, #d6eeff 32%, #c8e4ff 100%);
     --bg-halo: radial-gradient(circle at top, rgba(100, 160, 220, 0.12), transparent 46%);
     --bg-wash: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(214,238,255,0.4));
 
-    --font-display-family: 'DynaPuff', 'Fraunces', Georgia, serif;
+    --font-display-family: 'Gabarito', 'Literata', Georgia, serif;
     --font-display-settings: normal;
   }
 

@@ -11,7 +11,9 @@ declare const _default: {
                 oliveGray: string;
                 sage: string;
                 terracotta: string;
+                terracottaDeep: string;
                 olive: string;
+                oliveDeep: string;
             };
             fontFamily: {
                 display: [string, string, string];

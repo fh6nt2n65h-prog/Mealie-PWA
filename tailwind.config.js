@@ -11,11 +11,13 @@ export default {
                 oliveGray: 'rgb(var(--color-olive-gray) / <alpha-value>)',
                 sage: 'rgb(var(--color-sage) / <alpha-value>)',
                 terracotta: 'rgb(var(--color-terracotta) / <alpha-value>)',
-                olive: 'rgb(var(--color-olive) / <alpha-value>)'
+                terracottaDeep: 'rgb(var(--color-terracotta-deep) / <alpha-value>)',
+                olive: 'rgb(var(--color-olive) / <alpha-value>)',
+                oliveDeep: 'rgb(var(--color-olive-deep) / <alpha-value>)'
             },
             fontFamily: {
                 display: ['var(--font-display-family)', 'Georgia', 'serif'],
-                sans: ['Roboto Condensed', 'ui-sans-serif', 'system-ui', 'sans-serif']
+                sans: ['Schibsted Grotesk', 'ui-sans-serif', 'system-ui', 'sans-serif']
             },
             boxShadow: {
                 paper: '0 14px 35px rgba(86, 72, 51, 0.08)',

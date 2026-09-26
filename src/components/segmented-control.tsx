@@ -20,7 +20,7 @@ export function SegmentedControl<T extends string>({ value, onChange, options }:
           type="button"
           onClick={() => onChange(option.value)}
           className={clsx(
-            'rounded-full px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition-colors sm:px-5',
+            'rounded-full px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.18em] transition-colors sm:px-5',
             option.value === value ? 'bg-ink text-parchment' : 'text-oliveGray hover:text-ink'
           )}
         >

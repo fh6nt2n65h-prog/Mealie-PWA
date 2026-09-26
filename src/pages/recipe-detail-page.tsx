@@ -758,7 +758,7 @@ export function RecipeDetailPage() {
       <section className="rounded-card border border-taupe/70 bg-parchment shadow-paper">
         {image ? (
           <div className="relative overflow-hidden rounded-t-card bg-oat p-2 sm:p-3">
-            <img src={image} alt={recipe.name || 'Recipe'} className="aspect-[4/5] w-full rounded-[1.65rem] object-cover sm:aspect-[5/4]" />
+            <img src={image} alt={recipe.name || 'Recipe'} loading="eager" decoding="async" className="aspect-[4/5] w-full rounded-[1.65rem] object-cover sm:aspect-[5/4]" />
             <button
               type="button"
               aria-label={isFavorite ? 'Remove from favourites' : 'Add to favourites'}
@@ -772,17 +772,17 @@ export function RecipeDetailPage() {
 
         <div className="space-y-5 px-5 py-5 sm:px-7">
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-x-8 gap-y-2 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-oliveGray sm:gap-x-10">
+            <div className="flex flex-wrap gap-x-8 gap-y-2 text-[0.75rem] font-semibold uppercase tracking-[0.22em] text-oliveGray sm:gap-x-10">
               <span>{formatDuration(recipe.totalTime)}</span>
               <span>{recipe.recipeServings || 1} servings</span>
               {recipe.lastMade && <span>{formatRelativeCookedDate(recipe.lastMade)}</span>}
             </div>
-            <h2 className="max-w-3xl font-display text-4xl leading-none tracking-[-0.04em] text-ink sm:text-5xl">{recipe.name || 'Untitled recipe'}</h2>
+            <h2 className="max-w-3xl font-display text-[1.9rem] leading-[1.1] tracking-[-0.04em] text-ink sm:text-[2.75rem]">{recipe.name || 'Untitled recipe'}</h2>
             <p className="max-w-2xl text-sm leading-7 text-oliveGray">{recipe.description || 'A recipe collected into your private cooking journal.'}</p>
           </div>
 
           <div ref={buttonsRowRef} className="space-y-2">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-oliveGray">Servings</p>
+            <p className="text-[0.75rem] font-semibold uppercase tracking-[0.16em] text-oliveGray">Servings</p>
             <div className="flex items-center gap-2.5">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-taupe bg-cream px-1.5 py-1 text-xs font-semibold text-ink">
               <button type="button" onClick={() => setServings((s) => Math.max(1, s - 1))} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-parchment text-ink">
@@ -829,7 +829,7 @@ export function RecipeDetailPage() {
                       setConfirmDeleteOpen(true)
                     }}
                     disabled={deleting}
-                    className="flex w-full items-center gap-2 rounded-[0.8rem] px-3 py-2 text-left text-sm font-semibold text-terracotta hover:bg-terracotta/10 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center gap-2 rounded-[0.8rem] px-3 py-2 text-left text-sm font-semibold text-terracottaDeep hover:bg-terracotta/10 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Trash2 className="h-4 w-4" />
                     Delete recipe
@@ -840,20 +840,20 @@ export function RecipeDetailPage() {
             </div>
           </div>
 
-          {error && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{error}</p>}
+          {error && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracottaDeep">{error}</p>}
         </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[minmax(280px,360px)_1fr]">
         <article className="rounded-card border border-taupe/70 bg-oat/65 px-5 py-6 shadow-paper sm:px-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Ingredients</h3>
+            <h3 className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Ingredients</h3>
             {!cookMode && (
               <button
                 type="button"
                 onClick={() => void handleAddToShoppingList()}
                 disabled={listAddStatus === 'adding' || listAddStatus === 'added' || listAddStatus === 'alreadyAdded'}
-                className="inline-flex items-center gap-1 rounded-full bg-sage/20 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-olive transition-opacity disabled:opacity-60"
+                className="inline-flex items-center gap-1 rounded-full bg-sage/20 px-2.5 py-1 text-[0.75rem] font-semibold uppercase tracking-[0.16em] text-oliveDeep transition-opacity disabled:opacity-60"
                 aria-label="Add all ingredients to shopping list"
               >
                 {(listAddStatus === 'added' || listAddStatus === 'alreadyAdded') && <><Check className="h-3.5 w-3.5" />{listAddStatus === 'alreadyAdded' ? 'Already added' : 'Added'}</>}
@@ -887,11 +887,11 @@ export function RecipeDetailPage() {
         </article>
 
         <article className={`rounded-card border border-taupe/70 px-5 py-6 shadow-paper sm:px-6 ${cookMode ? 'bg-parchment' : 'bg-parchment/95'}`}>
-          <h3 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Method</h3>
+          <h3 className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Method</h3>
           <ol className="mt-5 space-y-5">
             {(recipe.recipeInstructions || []).map((step, index) => (
               <li key={step.id || `${index}`} className="grid gap-3 rounded-[1.4rem] bg-cream px-4 py-4 shadow-paper sm:grid-cols-[52px_1fr] sm:px-5 sm:py-5">
-                <span className="font-display text-4xl leading-none text-terracotta">{index + 1}</span>
+                <span className="font-display text-3xl leading-none text-terracotta">{index + 1}</span>
                 <div>
                   {step.title && <h4 className="text-base font-semibold text-ink">{step.title}</h4>}
                   <p className={`mt-1 ${cookMode ? 'text-xl leading-9 text-ink' : 'text-sm leading-7 text-oliveGray'}`}>
@@ -948,10 +948,10 @@ export function RecipeDetailPage() {
       >
         <div className="space-y-6">
           <section className="space-y-3">
-            <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Photo</h4>
+            <h4 className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Photo</h4>
             <div className="relative overflow-hidden rounded-[1.4rem] border border-taupe/60 bg-oat/40">
               {(imagePreviewUrl || image) ? (
-                <img src={imagePreviewUrl || image || ''} alt="Recipe" className="aspect-[4/3] w-full object-cover" />
+                <img src={imagePreviewUrl || image || ''} alt="Recipe" loading="lazy" decoding="async" className="aspect-[4/3] w-full object-cover" />
               ) : (
                 <div className="flex aspect-[4/3] w-full items-center justify-center">
                   <ImagePlus className="h-8 w-8 text-oliveGray/30" />
@@ -966,7 +966,7 @@ export function RecipeDetailPage() {
           </section>
 
           <section className="space-y-3">
-            <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Basic info</h4>
+            <h4 className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Basic info</h4>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-ink">Title</span>
               <input key={`title-${editFormSeed}`} ref={titleInputRef} defaultValue={editDraft.name} className={inputCls} placeholder="Recipe title" />
@@ -978,7 +978,7 @@ export function RecipeDetailPage() {
           </section>
 
           <section className="space-y-3">
-            <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Time &amp; servings</h4>
+            <h4 className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Time &amp; servings</h4>
             <div className="grid gap-3 sm:grid-cols-3">
               <label className="block space-y-1.5">
                 <span className="text-sm font-semibold text-ink">Prep</span>
@@ -1001,16 +1001,16 @@ export function RecipeDetailPage() {
 
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Ingredients</h4>
+              <h4 className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Ingredients</h4>
               {draftHasImperial && (
                 <button type="button" onClick={handleConvertDraftToMetric}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-taupe bg-cream px-3 py-1.5 text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-ink">
+                  className="inline-flex items-center gap-1.5 rounded-full border border-taupe bg-cream px-3 py-1.5 text-[0.75rem] font-semibold uppercase tracking-[0.12em] text-ink">
                   <ArrowDown01 className="h-3.5 w-3.5" /> Convert to metric
                 </button>
               )}
             </div>
             {convertStatus && (
-              <p className="rounded-[1.1rem] bg-sage/15 px-3.5 py-2.5 text-xs leading-5 text-olive">
+              <p className="rounded-[1.1rem] bg-sage/15 px-3.5 py-2.5 text-xs leading-5 text-oliveDeep">
                 {convertStatus.convertedCount} ingredient{convertStatus.convertedCount !== 1 ? 's' : ''} converted.
                 {convertStatus.stepsConverted > 0 && ` ${convertStatus.stepsConverted} step${convertStatus.stepsConverted !== 1 ? 's' : ''} with temperatures updated.`}
                 {convertStatus.skippedCount > 0 && ` ${convertStatus.skippedCount} skipped: ${convertStatus.skippedNames.slice(0, 3).join(', ')}${convertStatus.skippedNames.length > 3 ? '…' : ''}.`}
@@ -1057,12 +1057,12 @@ export function RecipeDetailPage() {
           </section>
 
           <section className="space-y-3">
-            <h4 className="text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Instructions</h4>
+            <h4 className="text-[0.75rem] font-semibold uppercase tracking-[0.28em] text-oliveGray">Instructions</h4>
             <ol className="space-y-3">
               {editDraft.instructions.map((step, idx) => (
                 <li key={idx} className="rounded-[1.2rem] border border-taupe/60 bg-oat/40 px-4 py-3 space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-display text-2xl text-terracotta">{idx + 1}</span>
+                    <span className="font-display text-xl text-terracotta">{idx + 1}</span>
                     <input value={step.title} onChange={(e) => setStepField(idx, 'title', e.target.value)} className={`${inputCls} flex-1`} placeholder="Step title (optional)" />
                     <button type="button" onClick={() => removeStep(idx)}
                       className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-terracotta/30 bg-terracotta/10 text-terracotta text-xs font-bold">×</button>
@@ -1079,7 +1079,7 @@ export function RecipeDetailPage() {
             </button>
           </section>
 
-          {editError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{editError}</p>}
+          {editError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracottaDeep">{editError}</p>}
         </div>
       </DialogSheet>
 

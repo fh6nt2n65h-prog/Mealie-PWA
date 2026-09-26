@@ -421,7 +421,7 @@ export function MealPlanPage() {
                 event.preventDefault()
                 openCreateDialog(day.key, 'dinner')
               }}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.72rem] font-semibold transition-colors sm:px-4 sm:py-2 ${isSelected ? 'border-ink bg-ink text-parchment' : hasEntries ? 'border-sage/60 bg-sage/15 text-olive' : 'border-taupe bg-cream text-oliveGray'}`}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.75rem] font-semibold transition-colors sm:px-4 sm:py-2 ${isSelected ? 'border-ink bg-ink text-parchment' : hasEntries ? 'border-sage/60 bg-sage/15 text-olive' : 'border-taupe bg-cream text-oliveGray'}`}
             >
               {day.label}
             </button>
@@ -436,7 +436,7 @@ export function MealPlanPage() {
       <div className="space-y-5 animate-rise" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
         <div className="sticky top-0 z-10 flex h-0 justify-center overflow-visible pointer-events-none" aria-hidden="true">
           <div
-            className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper transition-transform duration-200"
+            className="inline-flex items-center gap-2 rounded-full bg-oat/90 px-4 py-2 text-[0.75rem] font-semibold uppercase tracking-[0.24em] text-oliveGray shadow-paper transition-transform duration-200"
             style={{ transform: `translateY(${refreshing || pullDistance ? 10 : -70}px)` }}
           >
             {refreshing ? 'Refreshing' : 'Pull to refresh'}
@@ -463,7 +463,7 @@ export function MealPlanPage() {
                 >
                   <div className="mb-4 flex items-center justify-between border-b border-b-taupe/60 pb-4">
                     <div>
-                      <h3 className="font-display text-3xl tracking-[-0.03em] text-ink">{formatSectionDate(day.key)}</h3>
+                      <h3 className="font-display text-2xl tracking-[-0.03em] text-ink">{formatSectionDate(day.key)}</h3>
                     </div>
                     <button
                       type="button"
@@ -481,7 +481,7 @@ export function MealPlanPage() {
 
                       return (
                         <article key={`${day.key}-${mealType}`} className="rounded-[1.4rem] bg-cream px-4 py-3.5 shadow-paper">
-                          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{titleize(mealType)}</p>
+                          <p className="text-[0.75rem] font-semibold uppercase tracking-[0.24em] text-oliveGray">{titleize(mealType)}</p>
 
                           <ul className="mt-2 space-y-2">
                             {mealEntries.map((entry) => (
@@ -491,12 +491,12 @@ export function MealPlanPage() {
                                     {entry.recipe?.slug ? (
                                       <Link
                                         to={`/recipes/${entry.recipe.slug}`}
-                                        className="-mx-2 -my-1 inline-flex max-w-full rounded-[0.9rem] px-2 py-1 font-display text-xl tracking-[-0.03em] text-ink transition-colors duration-150 hover:bg-oat/70 active:bg-oat"
+                                        className="-mx-2 -my-1 inline-flex max-w-full rounded-[0.9rem] px-2 py-1 font-display text-lg tracking-[-0.03em] text-ink transition-colors duration-150 hover:bg-oat/70 active:bg-oat"
                                       >
                                         {entry.recipe.name || 'Planned item'}
                                       </Link>
                                     ) : (
-                                      <p className="font-display text-xl tracking-[-0.03em] text-ink">{entry.title || 'Planned item'}</p>
+                                      <p className="font-display text-lg tracking-[-0.03em] text-ink">{entry.title || 'Planned item'}</p>
                                     )}
                                     {!entry.recipe && entry.text && <p className="mt-0.5 text-sm leading-5 text-oliveGray">{entry.text}</p>}
                                   </div>
@@ -665,7 +665,7 @@ export function MealPlanPage() {
             </div>
           )}
 
-          {editorError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracotta">{editorError}</p>}
+          {editorError && <p className="rounded-[1.2rem] bg-terracotta/10 px-4 py-3 text-sm leading-6 text-terracottaDeep">{editorError}</p>}
         </div>
       </DialogSheet>
 

@@ -53,7 +53,7 @@ export function SettingsPage() {
             <ChefHat className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="font-display text-3xl tracking-[-0.03em] text-ink">Connect your kitchen</h2>
+            <h2 className="font-display text-2xl tracking-[-0.03em] text-ink">Connect your kitchen</h2>
           </div>
         </div>
 
@@ -107,7 +107,7 @@ export function SettingsPage() {
         </div>
 
         {status && (
-          <p className={`mt-5 rounded-[1.2rem] px-4 py-3 text-sm leading-6 ${isError ? 'bg-terracotta/10 text-terracotta' : 'bg-sage/20 text-olive'}`}>
+          <p className={`mt-5 rounded-[1.2rem] px-4 py-3 text-sm leading-6 ${isError ? 'bg-terracotta/10 text-terracottaDeep' : 'bg-sage/20 text-oliveDeep'}`}>
             {status}
           </p>
         )}

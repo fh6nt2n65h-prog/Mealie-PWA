@@ -22,7 +22,7 @@ export function BottomNav() {
                 to={item.to}
                 className={({ isActive }) =>
                   clsx(
-                    'app-bottom-nav-link flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] px-2 py-2 text-[0.63rem] font-semibold uppercase tracking-[0.14em] transition-colors',
+                    'app-bottom-nav-link flex min-h-16 flex-col items-center justify-center gap-1.5 rounded-[1.25rem] px-2 py-2 text-[0.78rem] font-medium tracking-[0.01em] transition-colors',
                     isActive ? 'bg-oat text-ink' : 'text-oliveGray hover:text-ink'
                   )
                 }

@@ -233,7 +233,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
             type="button"
             onClick={(event) => showTooltip(event.currentTarget, node.ingredient, node.id, node.duplicate)}
             onTouchStart={(event) => showTooltip(event.currentTarget, node.ingredient, node.id, node.duplicate)}
-            className={`inline-block align-baseline font-semibold text-terracotta transition-all duration-150 cursor-pointer ${tooltip?.id === node.id ? 'scale-[1.12]' : ''}`}
+            className={`inline-block align-baseline font-semibold text-terracottaDeep transition-all duration-150 cursor-pointer ${tooltip?.id === node.id ? 'scale-[1.12]' : ''}`}
           >
             {node.value}
           </button>
@@ -255,7 +255,7 @@ export function IngredientHighlighter({ text, ingredients }: IngredientHighlight
               className="pointer-events-none fixed z-50 rounded-[1rem] bg-ink px-3 py-2 text-sm font-semibold leading-6 text-parchment shadow-paper"
             >
               <p className="max-w-[min(19rem,calc(100vw-1rem))] whitespace-nowrap">{tooltip.text}</p>
-              {tooltip.duplicate ? <p className="mt-0.5 text-[0.7rem] italic text-parchment/75">Duplicate</p> : null}
+              {tooltip.duplicate ? <p className="mt-0.5 text-[0.75rem] italic text-parchment/75">Duplicate</p> : null}
             </motion.div>
           )}
         </AnimatePresence>,

@@ -34,7 +34,7 @@ export function DialogSheet({ open, title, description, onClose, children, foote
           >
             <div className="flex items-start justify-between gap-4 border-b border-b-taupe/60 px-5 py-4 sm:px-6">
               <div>
-                <h2 className="font-display text-2xl tracking-[-0.03em] text-ink">{title}</h2>
+                <h2 className="font-display text-xl tracking-[-0.03em] text-ink">{title}</h2>
                 {description && <p className="mt-1.5 text-sm leading-6 text-oliveGray">{description}</p>}
               </div>
 
