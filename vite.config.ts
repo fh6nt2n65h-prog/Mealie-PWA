@@ -14,7 +14,7 @@ export default defineConfig({
       includeAssets: ['icons/favicon-32.png', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png'],
       manifest: {
         name: 'Private Culinary Journal',
-        short_name: 'Mealie Journal',
+        short_name: 'Mealie',
         description: 'A custom Mealie PWA client designed to feel like a native iOS cooking journal.',
         theme_color: '#F7F3EC',
         background_color: '#F7F3EC',
