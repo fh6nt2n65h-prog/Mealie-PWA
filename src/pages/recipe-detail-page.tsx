@@ -5,6 +5,7 @@ import { ArrowDown01, Camera, Check, ImagePlus, ListPlus, Minus, MoreVertical, P
 import type { Recipe, RecipeIngredient } from '@/types/mealie'
 import { convertRecipeIngredients, convertTemperaturesInSteps, hasImperialIngredients } from '@/lib/unit-converter'
 import { useSettings } from '@/app/settings-context'
+import { useScreenWakeLock } from '@/hooks/use-screen-wake-lock'
 import { AnimatedHeartIcon } from '@/components/animated-heart-icon'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { DialogSheet } from '@/components/dialog-sheet'
@@ -187,6 +188,9 @@ export function RecipeDetailPage() {
     })
   }, [recipe])
   const actionsMenuRef = useRef<HTMLDivElement>(null)
+
+  // Cook mode is the hands-free view, so that's the only time the screen is held awake.
+  useScreenWakeLock({ active: cookMode })
 
   useEffect(() => {
     let cancelled = false
