@@ -48,6 +48,16 @@ function normalizeIngredientTerm(value: string | null | undefined) {
   return (value || '').trim().toLowerCase()
 }
 
+// Mealie enforces UniqueConstraint("name", "group_id") on both ingredient_foods and
+// ingredient_units, so creating a near-duplicate ("cloves" when "clove" exists) fails
+// the whole save with a 400. Accept simple singular/plural variants as the same term.
+function termVariants(value: string) {
+  const variants = new Set([value])
+  if (value.endsWith('es')) variants.add(value.slice(0, -2))
+  if (value.endsWith('s')) variants.add(value.slice(0, -1))
+  return variants
+}
+
 function matchesUnitName(unit: RecipeIngredient['unit'], value: string) {
   const normalized = normalizeIngredientTerm(value)
 
@@ -55,8 +65,12 @@ function matchesUnitName(unit: RecipeIngredient['unit'], value: string) {
     return false
   }
 
+  const wanted = termVariants(normalized)
   return [unit.name, unit.abbreviation, unit.pluralName, unit.pluralAbbreviation]
-    .some((candidate) => normalizeIngredientTerm(candidate) === normalized)
+    .some((candidate) => {
+      const candidateNormalized = normalizeIngredientTerm(candidate)
+      return candidateNormalized && wanted.has(candidateNormalized)
+    })
 }
 
 function matchesFoodName(food: RecipeIngredient['food'], value: string) {
@@ -66,8 +80,12 @@ function matchesFoodName(food: RecipeIngredient['food'], value: string) {
     return false
   }
 
+  const wanted = termVariants(normalized)
   return [food.name, food.pluralName]
-    .some((candidate) => normalizeIngredientTerm(candidate) === normalized)
+    .some((candidate) => {
+      const candidateNormalized = normalizeIngredientTerm(candidate)
+      return candidateNormalized && wanted.has(candidateNormalized)
+    })
 }
 
 function recipeToEditDraft(r: Recipe): RecipeEditDraft {
@@ -522,9 +540,22 @@ export function RecipeDetailPage() {
             }
 
             console.log(`Creating new unit: "${trimmed}"`)
-            const created = await api.createIngredientUnit({ name: trimmed, abbreviation: '' })
-            console.log(`Successfully created unit: "${trimmed}" with id:`, created.id)
-            return created
+            try {
+              const created = await api.createIngredientUnit({ name: trimmed, abbreviation: '' })
+              console.log(`Successfully created unit: "${trimmed}" with id:`, created.id)
+              return created
+            } catch (createErr) {
+              // Mealie may reject the create (e.g. the unit already exists under a
+              // different spelling). Re-search and reuse the match rather than
+              // failing the whole save.
+              console.warn(`Creating unit "${trimmed}" failed, re-searching:`, createErr)
+              const retry = await api.getIngredientUnits(trimmed)
+              const fallback = retry.items.find((candidate) => candidate.id && matchesUnitName(candidate, trimmed))
+              if (fallback) {
+                return fallback
+              }
+              throw createErr
+            }
           } catch (err) {
             console.error(`Error resolving unit "${trimmed}":`, err)
             throw err
@@ -564,9 +595,22 @@ export function RecipeDetailPage() {
             }
 
             console.log(`Creating new food: "${trimmed}"`)
-            const created = await api.createIngredientFood({ name: trimmed })
-            console.log(`Successfully created food: "${trimmed}" with id:`, created.id)
-            return created
+            try {
+              const created = await api.createIngredientFood({ name: trimmed })
+              console.log(`Successfully created food: "${trimmed}" with id:`, created.id)
+              return created
+            } catch (createErr) {
+              // Mealie may reject the create (e.g. the food already exists under a
+              // different spelling). Re-search and reuse the match rather than
+              // failing the whole save.
+              console.warn(`Creating food "${trimmed}" failed, re-searching:`, createErr)
+              const retry = await api.getIngredientFoods(trimmed)
+              const fallback = retry.items.find((candidate) => candidate.id && matchesFoodName(candidate, trimmed))
+              if (fallback) {
+                return fallback
+              }
+              throw createErr
+            }
           } catch (err) {
             console.error(`Error resolving food "${trimmed}":`, err)
             throw err

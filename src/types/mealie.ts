@@ -188,7 +188,11 @@ export type UserRatings = {
 }
 
 export type ApiErrorPayload = {
-  detail?: Array<{
-    msg?: string
-  }> | string
+  detail?:
+    | Array<{
+        msg?: string
+      }>
+    | string
+    // Mealie's ErrorResponse.respond() shape: { message, error, statusCode }
+    | { message?: string; error?: string | null; statusCode?: number }
 }

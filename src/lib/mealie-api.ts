@@ -187,6 +187,15 @@ export class MealieApi {
             if (Array.isArray(payload.detail) && payload.detail[0]?.msg) {
               message = payload.detail[0].msg
             }
+
+            // Mealie returns errors as detail objects ({ message, error, statusCode }),
+            // not plain strings — surface the message so failures are actionable.
+            if (payload.detail && typeof payload.detail === 'object' && !Array.isArray(payload.detail)) {
+              const detailMessage = payload.detail.message
+              if (typeof detailMessage === 'string' && detailMessage.trim()) {
+                message = detailMessage.trim()
+              }
+            }
           } catch {
             message = text
           }
