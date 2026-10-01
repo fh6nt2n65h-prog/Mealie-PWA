@@ -265,6 +265,7 @@ export function MealPlanPage() {
 
   function openCreateDialog(dayKey: string, entryType: PlanEntryType) {
     setDraft(createDraft(dayKey, entryType))
+    setSelectedDayKey(dayKey)
     setRecipeSearch('')
     setEditorError('')
     setEditorOpen(true)
@@ -386,6 +387,16 @@ export function MealPlanPage() {
   }
 
   useHeaderSlots({
+    sideContent: settings.apiToken ? (
+      <button
+        type="button"
+        onClick={() => openCreateDialog(selectedDayKey, 'dinner')}
+        className="inline-flex h-10 w-10 items-center justify-center rounded-full text-oliveGray"
+        aria-label="Add a meal"
+      >
+        <Plus className="h-5 w-5" />
+      </button>
+    ) : undefined,
     bottomContent: settings.apiToken ? (
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {calendarDays.map((day) => {
@@ -445,7 +456,7 @@ export function MealPlanPage() {
 
         {loading && <EmptyState title="Loading the plan" description="Collecting meal entries for the next two weeks." />}
         {!loading && error && <EmptyState title="Meal plan unavailable" description={error} />}
-        {!loading && !error && visibleDays.length === 0 && <EmptyState title="Nothing planned yet" description="Tap a day in the header strip, then use the + button to add your first meal." />}
+        {!loading && !error && visibleDays.length === 0 && <EmptyState title="Nothing planned yet" description="Use the + button above to add your first meal." />}
 
         {!loading && !error && (
           <div className="space-y-4">
@@ -568,6 +579,29 @@ export function MealPlanPage() {
         }
       >
         <div className="space-y-5">
+          <div className="space-y-2">
+            <span className="text-sm font-semibold text-ink">Day</span>
+            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+              {calendarDays.map((day) => {
+                const selected = day.key === draft.date
+
+                return (
+                  <button
+                    key={day.key}
+                    type="button"
+                    onClick={() => {
+                      setDraft((current) => ({ ...current, date: day.key }))
+                      setSelectedDayKey(day.key)
+                    }}
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-[0.75rem] font-semibold transition-colors sm:px-4 sm:py-2 ${selected ? 'border-ink bg-ink text-parchment' : 'border-taupe bg-cream text-oliveGray'}`}
+                  >
+                    {day.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           <div className="flex gap-3">
             <button
               type="button"
