@@ -22,41 +22,59 @@ export function useScreenWakeLock({ active }: { active: boolean }) {
 
     let sentinel: WakeLockSentinel | null = null
     let cancelled = false
+    let pending = false
 
-    function request() {
-      if (cancelled || sentinel || document.visibilityState !== 'visible') {
+    function release(lock: WakeLockSentinel) {
+      // A device may have already released it; cleanup must never reject unhandled.
+      void lock.release().catch(() => {})
+    }
+
+    async function request() {
+      if (cancelled || pending || document.visibilityState !== 'visible') {
         return
       }
+      if (sentinel && !sentinel.released) {
+        return
+      }
+      sentinel = null
+      pending = true
 
-      wakeLock.request('screen').then(
-        (next) => {
-          if (cancelled) {
-            next.release()
-            return
-          }
-
-          sentinel = next
-        },
-        () => {
-          // Refused by the browser or the device: nothing to recover from.
+      try {
+        const next = await wakeLock.request('screen')
+        if (cancelled || document.visibilityState !== 'visible') {
+          release(next)
+          return
         }
-      )
-    }
 
-    function handleVisibilityChange() {
-      if (document.visibilityState === 'visible') {
-        request()
+        sentinel = next
+        next.addEventListener('release', () => {
+          // Released sentinels cannot be reused. Do not retry here: a device
+          // refusing the lock (e.g. low battery) must not cause a retry loop.
+          if (sentinel === next) {
+            sentinel = null
+          }
+        }, { once: true })
+      } catch {
+        // The device can refuse a lock. Retry only on a later foreground event.
+      } finally {
+        pending = false
       }
     }
 
-    request()
-    document.addEventListener('visibilitychange', handleVisibilityChange)
+    void request()
+    document.addEventListener('visibilitychange', request)
+    window.addEventListener('pageshow', request)
+    window.addEventListener('focus', request)
 
     return () => {
       cancelled = true
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      sentinel?.release()
-      sentinel = null
+      document.removeEventListener('visibilitychange', request)
+      window.removeEventListener('pageshow', request)
+      window.removeEventListener('focus', request)
+      if (sentinel) {
+        release(sentinel)
+        sentinel = null
+      }
     }
   }, [active])
 }
