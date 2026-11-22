@@ -14,6 +14,7 @@ import { ChefHat } from '@/components/ChefHat'
 import { IngredientHighlighter } from '@/components/ingredient-highlighter'
 import { getRecipeCache, invalidateRecipesLoadedThisSession, removeRecipeCacheEntry, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { MealieApi } from '@/lib/mealie-api'
+import { matchesFoodName, matchesUnitName, normalizeIngredientTerm } from '@/lib/ingredient-terms'
 import { loadFavorites, saveFavorites, loadAddedRecipes, markRecipeAdded } from '@/lib/storage'
 import { extractIngredientKeywords, formatDuration, formatRelativeCookedDate, getRecipeImageUrl, persistRecipeImageVersion } from '@/lib/utils'
 
@@ -42,50 +43,6 @@ type RecipeEditDraft = {
   recipeServings: string
   ingredients: IngredientDraft[]
   instructions: StepDraft[]
-}
-
-function normalizeIngredientTerm(value: string | null | undefined) {
-  return (value || '').trim().toLowerCase()
-}
-
-// Mealie enforces UniqueConstraint("name", "group_id") on both ingredient_foods and
-// ingredient_units, so creating a near-duplicate ("cloves" when "clove" exists) fails
-// the whole save with a 400. Accept simple singular/plural variants as the same term.
-function termVariants(value: string) {
-  const variants = new Set([value])
-  if (value.endsWith('es')) variants.add(value.slice(0, -2))
-  if (value.endsWith('s')) variants.add(value.slice(0, -1))
-  return variants
-}
-
-function matchesUnitName(unit: RecipeIngredient['unit'], value: string) {
-  const normalized = normalizeIngredientTerm(value)
-
-  if (!normalized || !unit) {
-    return false
-  }
-
-  const wanted = termVariants(normalized)
-  return [unit.name, unit.abbreviation, unit.pluralName, unit.pluralAbbreviation]
-    .some((candidate) => {
-      const candidateNormalized = normalizeIngredientTerm(candidate)
-      return candidateNormalized && wanted.has(candidateNormalized)
-    })
-}
-
-function matchesFoodName(food: RecipeIngredient['food'], value: string) {
-  const normalized = normalizeIngredientTerm(value)
-
-  if (!normalized || !food) {
-    return false
-  }
-
-  const wanted = termVariants(normalized)
-  return [food.name, food.pluralName]
-    .some((candidate) => {
-      const candidateNormalized = normalizeIngredientTerm(candidate)
-      return candidateNormalized && wanted.has(candidateNormalized)
-    })
 }
 
 function recipeToEditDraft(r: Recipe): RecipeEditDraft {
