@@ -18,6 +18,7 @@ import { usePullToRefresh } from '@/hooks/use-pull-to-refresh'
 import { RECIPE_CACHE_UPDATED_EVENT, getRecipeCache, hasLoadedRecipesThisSession, markRecipesLoadedThisSession, removeRecipeCacheEntry, setRecipeCache, upsertRecipeCacheEntry } from '@/lib/recipe-cache'
 import { normalizeImportedImage } from '@/lib/import-images'
 import { MealieApi } from '@/lib/mealie-api'
+import { parseImportedIngredients } from '@/lib/ingredient-parsing'
 import { loadFavorites, loadViewMode, saveFavorites, saveViewMode } from '@/lib/storage'
 import { clamp, formatDayLabel, matchesRecipeQuery } from '@/lib/utils'
 
@@ -374,6 +375,24 @@ export function RecipesPage() {
   async function handleImportedRecipe(slug: string) {
     const api = new MealieApi(settings)
     let detail = await api.getRecipe(slug)
+
+    // Mealie's scraper leaves every ingredient as raw text with quantity 0, so
+    // split the lines into quantity, unit and food before the recipe is shown.
+    let parsedIngredients: Recipe['recipeIngredient'] | null = null
+    try {
+      parsedIngredients = await parseImportedIngredients(api, detail.recipeIngredient ?? [])
+    } catch {
+      // Parsing failed — keep the imported text as-is
+    }
+
+    if (parsedIngredients) {
+      try {
+        await api.updateRecipe(slug, { ...detail, recipeIngredient: parsedIngredients })
+        detail = await api.getRecipe(slug)
+      } catch {
+        // Saving the parsed ingredients failed — keep the imported text as-is
+      }
+    }
 
     // Auto-tag with the current mode category
     if (modeCategories) {

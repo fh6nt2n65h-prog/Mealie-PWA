@@ -61,6 +61,11 @@ export type RecipeIngredient = {
   referenceId?: string | null
 }
 
+export type ParsedIngredient = {
+  input?: string | null
+  ingredient: RecipeIngredient
+}
+
 export type RecipeStep = {
   id?: string | null
   title?: string | null

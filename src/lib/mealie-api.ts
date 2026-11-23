@@ -7,6 +7,7 @@ import type {
   IngredientUnit,
   MealPlanEntry,
   Pagination,
+  ParsedIngredient,
   Recipe,
   RecipeCategory,
   RecipeSummary,
@@ -314,6 +315,15 @@ export class MealieApi {
     return this.request<IngredientFood>('/foods', {
       method: 'POST',
       body: JSON.stringify(payload)
+    })
+  }
+
+  // Mealie's scraper stores each imported ingredient as raw text in `note` with
+  // quantity 0; this splits lines into quantity, unit, food and note.
+  async parseIngredients(ingredients: string[]) {
+    return this.request<ParsedIngredient[]>('/parser/ingredients', {
+      method: 'POST',
+      body: JSON.stringify({ parser: 'nlp', ingredients })
     })
   }
 
